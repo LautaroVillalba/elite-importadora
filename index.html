@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELITE IMPORTADORA - Control Inteligente de Ventas</title>
+  
+  <!-- Chart.js para Gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome para Íconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- html2pdf.js para exportar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- PDF.js para Lectura Automática de PDFs cargados -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --primary: #1e3a8a;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    body.dark-theme {
+      --bg-color: #0b0f19;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; transition: background-color 0.2s, color 0.2s; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: var(--card-bg);
+      padding: 16px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      background: var(--primary);
+      color: white;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-success { background-color: var(--success); color: white; }
+    .btn-accent { background-color: var(--accent); color: white; }
+    .btn-secondary { background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg);
+      padding: 12px 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+      flex-wrap: wrap;
+    }
+
+    .filter-bar label { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .kpi-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+    .kpi-value { font-size: 22px; font-weight: 700; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+
+    .card-box {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .box-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 0;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+    th { color: var(--text-muted); font-weight: 600; }
+    .text-right { text-align: right; }
+
+    .badge-cat {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+    }
+
+    /* Modal / File Input */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+      border: 1px solid var(--border-color);
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-muted); }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 14px;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--accent);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      background: rgba(59, 130, 246, 0.05);
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+
+    .badge-btn { padding: 4px 8px; border-radius: 4px; cursor: pointer; border: none; font-size: 11px; }
+
+    #plantilla-pdf {
+      display: none;
+      background: white;
+      color: #111;
+      padding: 40px;
+      font-family: Arial, sans-serif;
+    }
+
+    #plantilla-pdf .pdf-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #1e3a8a;
+      padding-bottom: 20px;
+      margin-bottom: 25px;
+    }
+
+    #plantilla-pdf table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    #plantilla-pdf th, #plantilla-pdf td { border: 1px solid #ccc; padding: 10px; font-size: 12px; }
+    #plantilla-pdf th { background-color: #1e3a8a; color: white; }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-box-archive"></i></div>
+      <div>
+        <h1>ELITE IMPORTADORA</h1>
+        <span style="font-size: 12px; color: var(--text-muted);">Sistema de Control de Ventas & Finanzas</span>
+      </div>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="btn btn-accent" onclick="abrirModalSubidaPDF()"><i class="fa-solid fa-file-arrow-up"></i> Cargar PDF Automático</button>
+      <button class="btn btn-primary" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Nueva Venta Manual</button>
+      <button class="btn btn-success" onclick="exportarCSV()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+      <button class="btn btn-secondary" onclick="exportarPDFPro()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+      <button class="btn btn-secondary" onclick="cambiarTema()"><i class="fa-solid fa-moon" id="icono-tema"></i></button>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filter-bar">
+    <label><i class="fa-regular fa-calendar-days"></i> Modo de Vista:</label>
+    <button class="filter-btn active" id="btn-filtro-semana" onclick="filtrarRango('semana')">Ventas de Esta Semana</button>
+    <button class="filter-btn" id="btn-filtro-mes" onclick="filtrarRango('mes')">Resumen del Mes (Por Semanas)</button>
+    <button class="filter-btn" id="btn-filtro-todo" onclick="filtrarRango('todo')">Historial Completo</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">Ventas Totales</div>
+      <div class="kpi-value" id="kpi-ventas" style="color: var(--accent);">$0,00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Compras / Costos</div>
+      <div class="kpi-value" id="kpi-compras" style="color: var(--danger);">$0,00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Ganancia Neta Limpia</div>
+      <div class="kpi-value" id="kpi-ganancia" style="color: var(--success);">$0,00</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+    <!-- Estadística de Ganancias Semanales -->
+    <div class="card-box">
+      <div class="box-title">
+        <span><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Estadísticas de Ganancias Semanales</span>
+      </div>
+      <canvas id="graficoEstadisticasGanancias" height="200"></canvas>
+    </div>
+
+    <!-- Tabla de Registros -->
+    <div class="card-box">
+      <div class="box-title">
+        <span id="titulo-tabla"><i class="fa-solid fa-receipt"></i> Historial de Ventas</span>
+        <button class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;" onclick="restablecerDatos()"><i class="fa-solid fa-rotate"></i> Reset</button>
+      </div>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead id="tabla-encabezado"></thead>
+          <tbody id="tabla-cuerpo"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Manual -->
+  <div class="modal-overlay" id="modal-formulario">
+    <div class="modal">
+      <h3 id="modal-titulo" style="margin-top:0;">Registrar Operación</h3>
+      <input type="hidden" id="edit-index">
+      
+      <div class="form-group">
+        <label for="input-fecha">Fecha de Calendario</label>
+        <input type="date" id="input-fecha" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="input-cliente">Cliente / Descripción</label>
+        <input type="text" id="input-cliente" class="form-control" placeholder="Ej: EMILIANO">
+      </div>
+      
+      <div class="form-group">
+        <label for="input-venta">Monto Total de Venta ($)</label>
+        <input type="number" id="input-venta" class="form-control" placeholder="0.00">
+      </div>
+
+      <div class="form-group">
+        <label for="input-compra">Costo de Compra / Importación ($)</label>
+        <input type="number" id="input-compra" class="form-control" placeholder="0.00">
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarRegistro()">Guardar Movimiento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Subir PDF y Autocompletar -->
+  <div class="modal-overlay" id="modal-subida-pdf">
+    <div class="modal">
+      <h3 style="margin-top:0;"><i class="fa-solid fa-robot"></i> Cargar PDF y Autocompletar</h3>
+      <p style="font-size: 13px; color: var(--text-muted);">Selecciona un PDF con tus datos contables para importar automáticamente las ventas.</p>
+      
+      <div class="drop-zone" onclick="document.getElementById('input-file-pdf').click()">
+        <i class="fa-solid fa-file-pdf" style="font-size: 32px; color: var(--accent); margin-bottom: 8px;"></i>
+        <p style="margin: 0; font-weight: 600;">Haz clic aquí para seleccionar tu PDF</p>
+        <input type="file" id="input-file-pdf" accept="application/pdf" style="display: none;" onchange="procesarArchivoPDF(event)">
+      </div>
+
+      <div id="pdf-status" style="font-size: 12px; text-align: center; color: var(--accent); display: none; margin-bottom: 10px;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Leyendo PDF y extrayendo datos...
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="cerrarModalSubidaPDF()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plantilla Oculta PDF Reportes -->
+  <div id="plantilla-pdf">
+    <div class="pdf-header">
+      <div>
+        <h1 style="color: #1e3a8a; margin:0;">ELITE IMPORTADORA</h1>
+        <p style="margin: 5px 0 0 0; color: #555;">Reporte Oficial de Ventas & Balance Financiero</p>
+      </div>
+      <div style="text-align: right; font-size: 12px; color: #666;">
+        <p style="margin: 0;"><strong>Fecha de Emisión:</strong> <span id="pdf-fecha-emision"></span></p>
+        <p style="margin: 0;"><strong>Modo Vista:</strong> <span id="pdf-rango-nombre"></span></p>
+      </div>
+    </div>
+
+    <h3>Resumen de Resultados</h3>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
+      <div><strong>Ventas Totales:</strong> <br><span id="pdf-total-ventas" style="color: #2563eb; font-size: 16px;"></span></div>
+      <div><strong>Compras / Costos:</strong> <br><span id="pdf-total-compras" style="color: #dc2626; font-size: 16px;"></span></div>
+      <div><strong>Ganancia Neta:</strong> <br><span id="pdf-total-ganancia" style="color: #16a34a; font-size: 16px;"></span></div>
+    </div>
+
+    <h3>Desglose</h3>
+    <table>
+      <thead id="pdf-tabla-encabezado"></thead>
+      <tbody id="pdf-tabla-cuerpo"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Configuración PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const fechaHoy = new Date().toISOString().split('T')[0];
+
+    const datosBase = [
+      { fecha: "2026-08-03", cliente: "EMILIANO", venta: 1500000, compra: 1000000 },
+      { fecha: "2026-08-10", cliente: "FEDE", venta: 500000, compra: 346240 },
+      { fecha: "2026-08-18", cliente: "EMILIANO", venta: 3197000, compra: 2242700 },
+      { fecha: "2026-08-20", cliente: "JOSE", venta: 360000, compra: 256020 }
+    ];
+
+    let datos = JSON.parse(localStorage.getItem('elite_ventas_v3')) || datosBase;
+    let filtroActual = 'semana';
+    let miGraficoEstadisticas = null;
+
+    function formatearMoneda(val) {
+      return "$ " + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function obtenerNumeroSemana(date) {
+      const primeroEnero = new Date(date.getFullYear(), 0, 1);
+      const dias = Math.floor((date - primeroEnero) / (24 * 60 * 60 * 1000));
+      return Math.ceil((dias + primeroEnero.getDay() + 1) / 7);
+    }
+
+    // Agrupamiento por Semana General
+    function obtenerGananciasSemanalesAgrupadas() {
+      const semanasMap = {};
+
+      datos.forEach(item => {
+        const d = new Date(item.fecha + 'T00:00:00');
+        const numSemana = obtenerNumeroSemana(d);
+        const año = d.getFullYear();
+        const etiqueta = `Semana ${numSemana} (${año})`;
+
+        if (!semanasMap[etiqueta]) {
+          semanasMap[etiqueta] = { etiqueta, ganancia: 0, venta: 0, compra: 0 };
+        }
+
+        semanasMap[etiqueta].ganancia += (item.venta - item.compra);
+        semanasMap[etiqueta].venta += item.venta;
+        semanasMap[etiqueta].compra += item.compra;
+      });
+
+      return Object.values(semanasMap);
+    }
+
+    function procesarDatos() {
+      const hoy = new Date();
+      let datosFiltrados = datos.filter(item => {
+        const fechaItem = new Date(item.fecha + 'T00:00:00');
+        if (filtroActual === 'semana') {
+          const hace7Dias = new Date();
+          hace7Dias.setDate(hoy.getDate() - 7);
+          return fechaItem >= hace7Dias;
+        } else if (filtroActual === 'mes') {
+          return fechaItem.getMonth() === hoy.getMonth() && fechaItem.getFullYear() === hoy.getFullYear();
+        }
+        return true;
+      });
+
+      datosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      if (filtroActual === 'mes') {
+        const semanasMap = {};
+        datosFiltrados.forEach(item => {
+          const dateObj = new Date(item.fecha + 'T00:00:00');
+          const numSemana = Math.ceil(dateObj.getDate() / 7);
+          const claveSemana = `Semana ${numSemana}`;
+
+          if (!semanasMap[claveSemana]) {
+            semanasMap[claveSemana] = {
+              etiqueta: claveSemana,
+              venta: 0,
+              compra: 0,
+              primeraFecha: item.fecha,
+              ultimaFecha: item.fecha
+            };
+          }
+
+          semanasMap[claveSemana].venta += item.venta;
+          semanasMap[claveSemana].compra += item.compra;
+          semanasMap[claveSemana].ultimaFecha = item.fecha;
+        });
+        return Object.values(semanasMap);
+      }
+
+      return datosFiltrados;
+    }
+
+    function filtrarRango(rango) {
+      filtroActual = rango;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-filtro-${rango}`).classList.add('active');
+      actualizarDashboard();
+    }
+
+    function actualizarDashboard() {
+      const listaProcesada = procesarDatos();
+      const cuerpo = document.getElementById('tabla-cuerpo');
+      const encabezado = document.getElementById('tabla-encabezado');
+      const tituloTabla = document.getElementById('titulo-tabla');
+
+      cuerpo.innerHTML = '';
+      let totalVentas = 0, totalCompras = 0, totalGanancias = 0;
+
+      if (filtroActual === 'mes') {
+        tituloTabla.innerHTML = `<i class="fa-solid fa-calendar-week"></i> Resumen del Mes Agrupado por Semanas`;
+        encabezado.innerHTML = `
+          <tr>
+            <th>Semana del Mes</th>
+            <th>Período</th>
+            <th class="text-right">Venta Total</th>
+            <th class="text-right">Compra Total</th>
+            <th class="text-right">Ganancia Neta</th>
+          </tr>
+        `;
+
+        listaProcesada.forEach(item => {
+          const ganancia = item.venta - item.compra;
+          totalVentas += item.venta; totalCompras += item.compra; totalGanancias += ganancia;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><span class="badge-cat">${item.etiqueta}</span></td>
+            <td><strong>${item.ultimaFecha} al ${item.primeraFecha}</strong></td>
+            <td class="text-right">${formatearMoneda(item.venta)}</td>
+            <td class="text-right">${formatearMoneda(item.compra)}</td>
+            <td class="text-right" style="color: var(--success); font-weight: bold;">${formatearMoneda(ganancia)}</td>
+          `;
+          cuerpo.appendChild(tr);
+        });
+
+      } else {
+        tituloTabla.innerHTML = `<i class="fa-solid fa-receipt"></i> Detalle de Operaciones (${filtroActual.toUpperCase()})`;
+        encabezado.innerHTML = `
+          <tr>
+            <th>Fecha</th>
+            <th>Cliente / Ítem</th>
+            <th class="text-right">Venta</th>
+            <th class="text-right">Compra</th>
+            <th class="text-right">Ganancia</th>
+            <th class="text-right">Acción</th>
+          </tr>
+        `;
+
+        listaProcesada.forEach(item => {
+          const ganancia = item.venta - item.compra;
+          totalVentas += item.venta; totalCompras += item.compra; totalGanancias += ganancia;
+
+          const realIndex = datos.indexOf(item);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><span class="badge-cat">${item.fecha}</span></td>
+            <td><strong>${item.cliente}</strong></td>
+            <td class="text-right">${formatearMoneda(item.venta)}</td>
+            <td class="text-right">${formatearMoneda(item.compra)}</td>
+            <td class="text-right" style="color: var(--success); font-weight: bold;">${formatearMoneda(ganancia)}</td>
+            <td class="text-right">
+              <button class="badge-btn btn-secondary" onclick="editarRegistro(${realIndex})"><i class="fa-solid fa-pen"></i></button>
+              <button class="badge-btn" style="background:#fee2e2; color:#ef4444;" onclick="eliminarRegistro(${realIndex})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          `;
+          cuerpo.appendChild(tr);
+        });
+      }
+
+      document.getElementById('kpi-ventas').innerText = formatearMoneda(totalVentas);
+      document.getElementById('kpi-compras').innerText = formatearMoneda(totalCompras);
+      document.getElementById('kpi-ganancia').innerText = formatearMoneda(totalGanancias);
+
+      localStorage.setItem('elite_ventas_v3', JSON.stringify(datos));
+      renderizarGraficoEstadisticas();
+    }
+
+    // Gráfico exclusivo para Ganancias Semanales
+    function renderizarGraficoEstadisticas() {
+      const ctx = document.getElementById('graficoEstadisticasGanancias').getContext('2d');
+      if (miGraficoEstadisticas) miGraficoEstadisticas.destroy();
+
+      const datosSemanales = obtenerGananciasSemanalesAgrupadas();
+
+      miGraficoEstadisticas = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: datosSemanales.map(d => d.etiqueta),
+          datasets: [{
+            label: 'Ganancia Neta Semanal ($)',
+            data: datosSemanales.map(d => d.ganancia),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 6,
+            pointBackgroundColor: '#10b981'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    // Modal y Lectura Inteligente de PDFs
+    function abrirModalSubidaPDF() {
+      document.getElementById('modal-subida-pdf').classList.add('active');
+    }
+
+    function cerrarModalSubidaPDF() {
+      document.getElementById('modal-subida-pdf').classList.remove('active');
+      document.getElementById('pdf-status').style.display = 'none';
+    }
+
+    async function procesarArchivoPDF(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('pdf-status').style.display = 'block';
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let textoCompleto = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map(item => item.str);
+          textoCompleto += strings.join(" ") + " ";
+        }
+
+        extraerYAutocompletarPDF(textoCompleto);
+      } catch (e) {
+        alert("Error al leer el archivo PDF. Intenta con otro formato.");
+        document.getElementById('pdf-status').style.display = 'none';
+      }
+    }
+
+    // Lógica de extracción de datos del PDF
+    function extraerYAutocompletarPDF(texto) {
+      // Expresión regular para encontrar clientes comunes o números
+      const clientesPosibles = ["EMILIANO", "FEDE", "JOSE"];
+      let clienteDetectado = "CLIENTE PDF";
+
+      clientesPosibles.forEach(c => {
+        if (texto.toUpperCase().includes(c)) clienteDetectado = c;
+      });
+
+      // Extraer números/valores
+      const numeros = texto.match(/\d+[\d.,]*/g);
+      let ventaExtraida = 0;
+      let compraExtraida = 0;
+
+      if (numeros && numeros.length >= 2) {
+        const valoresLimpios = numeros
+          .map(n => parseFloat(n.replace(/\./g, '').replace(',', '.')))
+          .filter(n => !isNaN(n) && n > 1000);
+
+        if (valoresLimpios.length >= 2) {
+          ventaExtraida = Math.max(...valoresLimpios);
+          compraExtraida = Math.min(...valoresLimpios);
+        }
+      }
+
+      cerrarModalSubidaPDF();
+
+      // Abrir formulario autocompletado
+      document.getElementById('modal-titulo').innerText = "Venta Autocompletada desde PDF";
+      document.getElementById('edit-index').value = "-1";
+      document.getElementById('input-fecha').value = fechaHoy;
+      document.getElementById('input-cliente').value = clienteDetectado;
+      document.getElementById('input-venta').value = ventaExtraida || "";
+      document.getElementById('input-compra').value = compraExtraida || "";
+      document.getElementById('modal-formulario').classList.add('active');
+    }
+
+    function abrirModal() {
+      document.getElementById('modal-titulo').innerText = "Registrar Operación";
+      document.getElementById('edit-index').value = "-1";
+      document.getElementById('input-fecha').value = fechaHoy;
+      document.getElementById('input-cliente').value = "";
+      document.getElementById('input-venta').value = "";
+      document.getElementById('input-compra').value = "";
+      document.getElementById('modal-formulario').classList.add('active');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-formulario').classList.remove('active');
+    }
+
+    function guardarRegistro() {
+      const fecha = document.getElementById('input-fecha').value || fechaHoy;
+      const cliente = document.getElementById('input-cliente').value.trim();
+      const venta = parseFloat(document.getElementById('input-venta').value) || 0;
+      const compra = parseFloat(document.getElementById('input-compra').value) || 0;
+      const index = parseInt(document.getElementById('edit-index').value);
+
+      if (!cliente) return alert("Ingresa un cliente o concepto.");
+
+      if (index === -1) {
+        datos.push({ fecha, cliente, venta, compra });
+      } else {
+        datos[index] = { fecha, cliente, venta, compra };
+      }
+
+      cerrarModal();
+      actualizarDashboard();
+    }
+
+    function editarRegistro(index) {
+      const item = datos[index];
+      document.getElementById('modal-titulo').innerText = "Editar Operación";
+      document.getElementById('edit-index').value = index;
+      document.getElementById('input-fecha').value = item.fecha;
+      document.getElementById('input-cliente').value = item.cliente;
+      document.getElementById('input-venta').value = item.venta;
+      document.getElementById('input-compra').value = item.compra;
+      document.getElementById('modal-formulario').classList.add('active');
+    }
+
+    function eliminarRegistro(index) {
+      if (confirm(`¿Eliminar la operación de ${datos[index].cliente}?`)) {
+        datos.splice(index, 1);
+        actualizarDashboard();
+      }
+    }
+
+    function restablecerDatos() {
+      if (confirm("¿Restablecer el sistema a los datos iniciales?")) {
+        datos = [...datosBase];
+        actualizarDashboard();
+      }
+    }
+
+    function exportarPDFPro() {
+      const lista = procesarDatos();
+      const pdfCuerpo = document.getElementById('pdf-tabla-cuerpo');
+      const pdfEncabezado = document.getElementById('pdf-tabla-encabezado');
+      pdfCuerpo.innerHTML = '';
+
+      let totalV = 0, totalC = 0, totalG = 0;
+
+      pdfEncabezado.innerHTML = `
+        <tr>
+          <th>Fecha / Semana</th>
+          <th>Cliente / Detalle</th>
+          <th style="text-align: right;">Venta ($)</th>
+          <th style="text-align: right;">Compra ($)</th>
+          <th style="text-align: right;">Ganancia Neta ($)</th>
+        </tr>
+      `;
+
+      lista.forEach(item => {
+        const ganancia = item.venta - item.compra;
+        totalV += item.venta; totalC += item.compra; totalG += ganancia;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.fecha || item.etiqueta}</td>
+          <td><strong>${item.cliente || 'Resumen Semana'}</strong></td>
+          <td style="text-align: right;">${formatearMoneda(item.venta)}</td>
+          <td style="text-align: right;">${formatearMoneda(item.compra)}</td>
+          <td style="text-align: right; color: #16a34a; font-weight: bold;">${formatearMoneda(ganancia)}</td>
+        `;
+        pdfCuerpo.appendChild(tr);
+      });
+
+      document.getElementById('pdf-fecha-emision').innerText = new Date().toLocaleDateString('es-AR');
+      document.getElementById('pdf-rango-nombre').innerText = filtroActual.toUpperCase();
+      document.getElementById('pdf-total-ventas').innerText = formatearMoneda(totalV);
+      document.getElementById('pdf-total-compras').innerText = formatearMoneda(totalC);
+      document.getElementById('pdf-total-ganancia').innerText = formatearMoneda(totalG);
+
+      const elemento = document.getElementById('plantilla-pdf');
+      elemento.style.display = 'block';
+
+      const opciones = {
+        margin: [10, 10, 10, 10],
+        filename: `ELITE_IMPORTADORA_Reporte_${filtroActual}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opciones).from(elemento).save().then(() => {
+        elemento.style.display = 'none';
+      });
+    }
+
+    function exportarCSV() {
+      let csv = "Fecha/Semana,Concepto,Venta,Compra,Ganancia\n";
+      procesarDatos().forEach(d => {
+        csv += `${d.fecha || d.etiqueta},${d.cliente || 'Resumen'},${d.venta},${d.compra},${d.venta - d.compra}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ELITE_IMPORTADORA_${filtroActual}.csv`;
+      a.click();
+    }
+
+    function cambiarTema() {
+      document.body.classList.toggle('dark-theme');
+      const icono = document.getElementById('icono-tema');
+      icono.className = document.body.classList.contains('dark-theme') ? "fa-solid fa-sun" : "fa-solid fa-moon";
+    }
+
+    actualizarDashboard();
+  </script>
+</body>
+</html>
