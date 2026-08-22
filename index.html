@@ -320,7 +320,7 @@
       <img src="https://lh3.googleusercontent.com/d/1Xq1qS1m16sZfHkM9R9P8gH52s4sA4E1B" alt="ELITE IMPORTADORA Logo" class="brand-img">
       <div>
         <h1>ELITE IMPORTADORA</h1>
-        <span style="font-size: 12px; color: var(--text-muted);">Sistema de Control de Ventas & Finanzas (Nube)</span>
+        <span style="font-size: 12px; color: var(--text-muted);">Sistema de Control de Ventas & Finanzas</span>
       </div>
     </div>
     
@@ -392,7 +392,7 @@
 
     <div class="card-box">
       <div class="box-title">
-        <span id="titulo-tabla"><i class="fa-solid fa-receipt"></i> Historial de Ventas (Nube)</span>
+        <span id="titulo-tabla"><i class="fa-solid fa-receipt"></i> Historial de Ventas</span>
       </div>
       <div style="overflow-x: auto;">
         <table>
@@ -581,7 +581,7 @@
 
   <script>
     // =============================================================
-    // === REEMPLAZA AQUÍ TUS CREDENCIALES DE FIREBASE =============
+    // === CONFIGURACIÓN DE PERSISTENCIA (LOCAL + FIREBASE) =======
     // =============================================================
     const firebaseConfig = {
       apiKey: "AIzaSyD-xXexampleKey12345678",
@@ -591,21 +591,31 @@
       messagingSenderId: "1234567890",
       appId: "1:1234567890:web:abcdef123456"
     };
-    // =============================================================
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    let db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      console.log("Modo Local Activo (Sin Firebase)");
+    }
 
-    const fechaHoy = "2026-08-22";
+    const fechaHoy = new Date().toISOString().split('T')[0];
     const META_GANANCIA_MENSUAL = 5000000;
 
-    let datos = [];
-    let gastos = [];
-    let stockList = [];
+    let datos = JSON.parse(localStorage.getItem('elite_ventas')) || [];
+    let gastos = JSON.parse(localStorage.getItem('elite_gastos')) || [];
+    let stockList = JSON.parse(localStorage.getItem('elite_stock')) || [];
 
     let filtroActual = 'todo';
     let miGraficoEstadisticas = null;
     let mostrarTodoTabla = false;
+
+    function guardarLocal() {
+      localStorage.setItem('elite_ventas', JSON.stringify(datos));
+      localStorage.setItem('elite_gastos', JSON.stringify(gastos));
+      localStorage.setItem('elite_stock', JSON.stringify(stockList));
+    }
 
     function formatearMoneda(val) {
       return "$ " + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -630,31 +640,30 @@
       }
     }
 
-    // --- CONEXIÓN EN TIEMPO REAL CON FIREBASE ---
-    db.collection("ventas").onSnapshot((snapshot) => {
-      datos = [];
-      snapshot.forEach((doc) => {
-        datos.push({ idDoc: doc.id, ...doc.data() });
+    // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) CON FALLBACK LOCAL ---
+    if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+      db.collection("ventas").onSnapshot((snapshot) => {
+        datos = [];
+        snapshot.forEach((doc) => datos.push({ idDoc: doc.id, ...doc.data() }));
+        guardarLocal();
+        actualizarDashboard();
       });
-      actualizarDashboard();
-    });
 
-    db.collection("gastos").onSnapshot((snapshot) => {
-      gastos = [];
-      snapshot.forEach((doc) => {
-        gastos.push({ idDoc: doc.id, ...doc.data() });
+      db.collection("gastos").onSnapshot((snapshot) => {
+        gastos = [];
+        snapshot.forEach((doc) => gastos.push({ idDoc: doc.id, ...doc.data() }));
+        guardarLocal();
+        actualizarDashboard();
+        if (filtroActual === 'gastos') renderizarVistaGastos();
       });
-      actualizarDashboard();
-      if (filtroActual === 'gastos') renderizarVistaGastos();
-    });
 
-    db.collection("stock").onSnapshot((snapshot) => {
-      stockList = [];
-      snapshot.forEach((doc) => {
-        stockList.push({ idDoc: doc.id, ...doc.data() });
+      db.collection("stock").onSnapshot((snapshot) => {
+        stockList = [];
+        snapshot.forEach((doc) => stockList.push({ idDoc: doc.id, ...doc.data() }));
+        guardarLocal();
+        if (filtroActual === 'stock') renderizarVistaStock();
       });
-      if (filtroActual === 'stock') renderizarVistaStock();
-    });
+    }
 
     function calcularTotalGastos() {
       return gastos.reduce((sum, g) => sum + Number(g.monto), 0);
@@ -952,7 +961,10 @@
       document.getElementById('input-fecha').value = fechaHoy;
       document.getElementById('modal-formulario').classList.add('active');
     }
-    function cerrarModal() { document.getElementById('modal-formulario').classList.remove('active'); }
+
+    function cerrarModal() { 
+      document.getElementById('modal-formulario').classList.remove('active'); 
+    }
 
     async function guardarRegistro() {
       const fecha = document.getElementById('input-fecha').value;
@@ -963,15 +975,29 @@
 
       if (!cliente || venta <= 0) return alert('Ingresa un cliente y un monto válido.');
 
-      await db.collection("ventas").add({ fecha, cliente, venta, compra, pago, creado: new Date() });
+      const nuevoRegistro = { idDoc: 'loc_' + Date.now(), fecha, cliente, venta, compra, pago, creado: new Date() };
+      datos.unshift(nuevoRegistro);
+      guardarLocal();
+      actualizarDashboard();
+
+      if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+        try { await db.collection("ventas").add({ fecha, cliente, venta, compra, pago, creado: new Date() }); } catch(e){}
+      }
+
       cerrarModal();
+      document.getElementById('input-cliente').value = '';
+      document.getElementById('input-venta').value = '';
+      document.getElementById('input-compra').value = '';
     }
 
     function abrirModalGasto() {
       document.getElementById('input-gasto-fecha').value = fechaHoy;
       document.getElementById('modal-gasto').classList.add('active');
     }
-    function cerrarModalGasto() { document.getElementById('modal-gasto').classList.remove('active'); }
+
+    function cerrarModalGasto() { 
+      document.getElementById('modal-gasto').classList.remove('active'); 
+    }
 
     async function guardarGasto() {
       const fecha = document.getElementById('input-gasto-fecha').value;
@@ -980,12 +1006,28 @@
 
       if (!concepto || monto <= 0) return alert('Ingresa un concepto y un monto válido.');
 
-      await db.collection("gastos").add({ fecha, concepto, monto, creado: new Date() });
+      const nuevoGasto = { idDoc: 'loc_' + Date.now(), fecha, concepto, monto, creado: new Date() };
+      gastos.unshift(nuevoGasto);
+      guardarLocal();
+      actualizarDashboard();
+      if (filtroActual === 'gastos') renderizarVistaGastos();
+
+      if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+        try { await db.collection("gastos").add({ fecha, concepto, monto, creado: new Date() }); } catch(e){}
+      }
+
       cerrarModalGasto();
+      document.getElementById('input-gasto-concepto').value = '';
+      document.getElementById('input-gasto-monto').value = '';
     }
 
-    function abrirModalStock() { document.getElementById('modal-stock').classList.add('active'); }
-    function cerrarModalStock() { document.getElementById('modal-stock').classList.remove('active'); }
+    function abrirModalStock() { 
+      document.getElementById('modal-stock').classList.add('active'); 
+    }
+
+    function cerrarModalStock() { 
+      document.getElementById('modal-stock').classList.remove('active'); 
+    }
 
     async function guardarStock() {
       const nombre = document.getElementById('input-stock-nombre').value;
@@ -995,78 +1037,118 @@
 
       if (!nombre) return alert('Ingresa un nombre de producto.');
 
-      await db.collection("stock").add({ nombre, cantidad, costo, precio, creado: new Date() });
+      const nuevoStock = { idDoc: 'loc_' + Date.now(), nombre, cantidad, costo, precio, creado: new Date() };
+      stockList.unshift(nuevoStock);
+      guardarLocal();
+      if (filtroActual === 'stock') renderizarVistaStock();
+
+      if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+        try { await db.collection("stock").add({ nombre, cantidad, costo, precio, creado: new Date() }); } catch(e){}
+      }
+
       cerrarModalStock();
+      document.getElementById('input-stock-nombre').value = '';
+      document.getElementById('input-stock-cantidad').value = '';
+      document.getElementById('input-stock-costo').value = '';
+      document.getElementById('input-stock-precio').value = '';
     }
 
     async function eliminarRegistro(idDoc) {
-      if (confirm('¿Eliminar esta venta permanentemente de la nube?')) {
-        await db.collection("ventas").doc(idDoc).delete();
+      if (confirm('¿Eliminar esta venta permanentemente?')) {
+        datos = datos.filter(d => d.idDoc !== idDoc);
+        guardarLocal();
+        actualizarDashboard();
+
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { await db.collection("ventas").doc(idDoc).delete(); } catch(e){}
+        }
       }
     }
 
     async function eliminarGasto(idDoc) {
-      if (confirm('¿Eliminar este gasto permanentemente de la nube?')) {
-        await db.collection("gastos").doc(idDoc).delete();
+      if (confirm('¿Eliminar este gasto permanentemente?')) {
+        gastos = gastos.filter(g => g.idDoc !== idDoc);
+        guardarLocal();
+        actualizarDashboard();
+        if (filtroActual === 'gastos') renderizarVistaGastos();
+
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { await db.collection("gastos").doc(idDoc).delete(); } catch(e){}
+        }
       }
     }
 
     async function eliminarStock(idDoc) {
-      if (confirm('¿Eliminar producto del stock en la nube?')) {
-        await db.collection("stock").doc(idDoc).delete();
+      if (confirm('¿Eliminar producto del stock?')) {
+        stockList = stockList.filter(s => s.idDoc !== idDoc);
+        guardarLocal();
+        if (filtroActual === 'stock') renderizarVistaStock();
+
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { await db.collection("stock").doc(idDoc).delete(); } catch(e){}
+        }
       }
     }
 
-    // Carga Masiva de tus 32 datos del PDF a Firebase por única vez
+    // Carga Masiva de los 32 datos a Memoria / LocalStorage
     async function restablecerDatosNube() {
-      if (!confirm('¿Deseas subir los 32 registros del PDF a tu base de datos en la nube?')) return;
+      if (!confirm('¿Deseas restaurar los 32 registros iniciales del PDF?')) return;
 
       const datosPDF = [
-        { fecha: "2026-08-20", cliente: "FEDE", venta: 1209600, compra: 828900, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "EMILIANO", venta: 792000, compra: 518000, pago: "Efectivo" },
-        { fecha: "2026-08-20", cliente: "CARMELO", venta: 211200, compra: 147360, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "MICAELA", venta: 479000, compra: 269000, pago: "Mercado Pago" },
-        { fecha: "2026-08-20", cliente: "ADRIANA", venta: 175000, compra: 93000, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "FLOR", venta: 680000, compra: 480000, pago: "Efectivo" },
-        { fecha: "2026-08-20", cliente: "IVANA", venta: 1152500, compra: 768000, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "DALMA", venta: 360000, compra: 240000, pago: "Efectivo" },
-        { fecha: "2026-08-20", cliente: "THANIA", venta: 180000, compra: 120000, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "CARLOS", venta: 255000, compra: 168000, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "GIANOMY", venta: 70000, compra: 50000, pago: "Efectivo" },
-        { fecha: "2026-08-20", cliente: "PAULINA", venta: 85000, compra: 41000, pago: "Transferencia" },
-        { fecha: "2026-08-20", cliente: "ME QUEDO", venta: 585000, compra: 383800, pago: "Efectivo" },
-        { fecha: "2026-08-20", cliente: "GABRIELA", venta: 60000, compra: 33000, pago: "Mercado Pago" },
-        { fecha: "2026-08-17", cliente: "EMILIANO", venta: 3197000, compra: 2242700, pago: "Transferencia" },
-        { fecha: "2026-08-17", cliente: "FEDE", venta: 500000, compra: 346240, pago: "Transferencia" },
-        { fecha: "2026-08-17", cliente: "JOSE", venta: 360000, compra: 256020, pago: "Efectivo" },
-        { fecha: "2026-08-15", cliente: "IVANA", venta: 777500, compra: 514000, pago: "Transferencia" },
-        { fecha: "2026-08-15", cliente: "EMILIANO", venta: 860000, compra: 552000, pago: "Efectivo" },
-        { fecha: "2026-08-15", cliente: "FEDE", venta: 1400000, compra: 978000, pago: "Transferencia" },
-        { fecha: "2026-08-15", cliente: "VERONICA", venta: 475000, compra: 330000, pago: "Transferencia" },
-        { fecha: "2026-08-15", cliente: "FLOR", venta: 775000, compra: 505000, pago: "Efectivo" },
-        { fecha: "2026-08-15", cliente: "MABEL", venta: 445000, compra: 292000, pago: "Transferencia" },
-        { fecha: "2026-08-15", cliente: "AYLEN", venta: 100000, compra: 65000, pago: "Efectivo" },
-        { fecha: "2026-08-15", cliente: "FRANCHESCA", venta: 60000, compra: 32000, pago: "Mercado Pago" },
-        { fecha: "2026-08-15", cliente: "MICAELA", venta: 88000, compra: 60000, pago: "Transferencia" },
-        { fecha: "2026-08-15", cliente: "VERO", venta: 200000, compra: 130000, pago: "Efectivo" },
-        { fecha: "2026-08-15", cliente: "ME QUEDO", venta: 505000, compra: 335000, pago: "Transferencia" },
-        { fecha: "2026-08-11", cliente: "FEDE", venta: 1618500, compra: 1110390, pago: "Transferencia" },
-        { fecha: "2026-08-11", cliente: "EMILIANO", venta: 1380000, compra: 1027200, pago: "Efectivo" },
-        { fecha: "2026-08-11", cliente: "CARMELO", venta: 200000, compra: 135000, pago: "Transferencia" },
-        { fecha: "2026-08-21", cliente: "STEFI", venta: 235000, compra: 119000, pago: "Transferencia" }
+        { idDoc: 'loc_1', fecha: "2026-08-20", cliente: "FEDE", venta: 1209600, compra: 828900, pago: "Transferencia" },
+        { idDoc: 'loc_2', fecha: "2026-08-20", cliente: "EMILIANO", venta: 792000, compra: 518000, pago: "Efectivo" },
+        { idDoc: 'loc_3', fecha: "2026-08-20", cliente: "CARMELO", venta: 211200, compra: 147360, pago: "Transferencia" },
+        { idDoc: 'loc_4', fecha: "2026-08-20", cliente: "MICAELA", venta: 479000, compra: 269000, pago: "Mercado Pago" },
+        { idDoc: 'loc_5', fecha: "2026-08-20", cliente: "ADRIANA", venta: 175000, compra: 93000, pago: "Transferencia" },
+        { idDoc: 'loc_6', fecha: "2026-08-20", cliente: "FLOR", venta: 680000, compra: 480000, pago: "Efectivo" },
+        { idDoc: 'loc_7', fecha: "2026-08-20", cliente: "IVANA", venta: 1152500, compra: 768000, pago: "Transferencia" },
+        { idDoc: 'loc_8', fecha: "2026-08-20", cliente: "DALMA", venta: 360000, compra: 240000, pago: "Efectivo" },
+        { idDoc: 'loc_9', fecha: "2026-08-20", cliente: "THANIA", venta: 180000, compra: 120000, pago: "Transferencia" },
+        { idDoc: 'loc_10', fecha: "2026-08-20", cliente: "CARLOS", venta: 255000, compra: 168000, pago: "Transferencia" },
+        { idDoc: 'loc_11', fecha: "2026-08-20", cliente: "GIANOMY", venta: 70000, compra: 50000, pago: "Efectivo" },
+        { idDoc: 'loc_12', fecha: "2026-08-20", cliente: "PAULINA", venta: 85000, compra: 41000, pago: "Transferencia" },
+        { idDoc: 'loc_13', fecha: "2026-08-20", cliente: "ME QUEDO", venta: 585000, compra: 383800, pago: "Efectivo" },
+        { idDoc: 'loc_14', fecha: "2026-08-20", cliente: "GABRIELA", venta: 60000, compra: 33000, pago: "Mercado Pago" },
+        { idDoc: 'loc_15', fecha: "2026-08-17", cliente: "EMILIANO", venta: 3197000, compra: 2242700, pago: "Transferencia" },
+        { idDoc: 'loc_16', fecha: "2026-08-17", cliente: "FEDE", venta: 500000, compra: 346240, pago: "Transferencia" },
+        { idDoc: 'loc_17', fecha: "2026-08-17", cliente: "JOSE", venta: 360000, compra: 256020, pago: "Efectivo" },
+        { idDoc: 'loc_18', fecha: "2026-08-15", cliente: "IVANA", venta: 777500, compra: 514000, pago: "Transferencia" },
+        { idDoc: 'loc_19', fecha: "2026-08-15", cliente: "EMILIANO", venta: 860000, compra: 552000, pago: "Efectivo" },
+        { idDoc: 'loc_20', fecha: "2026-08-15", cliente: "FEDE", venta: 1400000, compra: 978000, pago: "Transferencia" },
+        { idDoc: 'loc_21', fecha: "2026-08-15", cliente: "VERONICA", venta: 475000, compra: 330000, pago: "Transferencia" },
+        { idDoc: 'loc_22', fecha: "2026-08-15", cliente: "FLOR", venta: 775000, compra: 505000, pago: "Efectivo" },
+        { idDoc: 'loc_23', fecha: "2026-08-15", cliente: "MABEL", venta: 445000, compra: 292000, pago: "Transferencia" },
+        { idDoc: 'loc_24', fecha: "2026-08-15", cliente: "AYLEN", venta: 100000, compra: 65000, pago: "Efectivo" },
+        { idDoc: 'loc_25', fecha: "2026-08-15", cliente: "FRANCHESCA", venta: 60000, compra: 32000, pago: "Mercado Pago" },
+        { idDoc: 'loc_26', fecha: "2026-08-15", cliente: "MICAELA", venta: 88000, compra: 60000, pago: "Transferencia" },
+        { idDoc: 'loc_27', fecha: "2026-08-15", cliente: "VERO", venta: 200000, compra: 130000, pago: "Efectivo" },
+        { idDoc: 'loc_28', fecha: "2026-08-15", cliente: "ME QUEDO", venta: 505000, compra: 335000, pago: "Transferencia" },
+        { idDoc: 'loc_29', fecha: "2026-08-11", cliente: "FEDE", venta: 1618500, compra: 1110390, pago: "Transferencia" },
+        { idDoc: 'loc_30', fecha: "2026-08-11", cliente: "EMILIANO", venta: 1380000, compra: 1027200, pago: "Efectivo" },
+        { idDoc: 'loc_31', fecha: "2026-08-11", cliente: "CARMELO", venta: 200000, compra: 135000, pago: "Transferencia" },
+        { idDoc: 'loc_32', fecha: "2026-08-21", cliente: "STEFI", venta: 235000, compra: 119000, pago: "Transferencia" }
       ];
 
-      for (let reg of datosPDF) {
-        await db.collection("ventas").add({ ...reg, creado: new Date() });
-      }
+      datos = datosPDF;
+      gastos = [{
+        idDoc: 'loc_g1',
+        fecha: "2026-08-22", 
+        concepto: "GASTOS GENERALES LOGISTICA E IMPORTACION", 
+        monto: 1247000 
+      }];
 
-      await db.collection("gastos").add({ fecha: "2026-08-22", concepto: "GASTOS GENERALES LOGISTICA E IMPORTACION", monto: 1247000, creado: new Date() });
-
-      alert('¡Carga completada exitosamente en la nube!');
+      guardarLocal();
+      actualizarDashboard();
+      alert('¡Datos iniciales cargados y guardados correctamente!');
     }
 
-    /* Inicialización */
-    obtenerCotizacionDolar();
+    /* Inicialización al cargar la página */
+    window.onload = function() {
+      actualizarDashboard();
+      if (typeof obtenerCotizacionDolar === 'function') {
+        obtenerCotizacionDolar();
+      }
+    };
   </script>
 </body>
 </html>
