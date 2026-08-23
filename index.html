@@ -797,16 +797,21 @@
 
     // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) ---
     if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+      // Listener de Ventas
       db.collection("ventas").onSnapshot((snapshot) => {
         if (!snapshot.empty) {
           const datosNube = [];
-          snapshot.forEach((doc) => datosNube.push({ idDoc: doc.id, ...doc.data() }));
-          if (datosNube.length > 0) {
-            datos = datosNube;
-            ordenarVentas();
-            guardarLocal();
-            actualizarDashboard();
-          }
+          snapshot.forEach((doc) => {
+            datosNube.push({ ...doc.data(), idDoc: doc.id }); // <--- doc.id asignado a idDoc
+          });
+          datos = datosNube;
+          ordenarVentas();
+          guardarLocal();
+          actualizarDashboard();
+        } else {
+          datos = [];
+          guardarLocal();
+          actualizarDashboard();
         }
       });
 
@@ -835,15 +840,20 @@
         }
       });
 
+      // Listener de Faltantes
       db.collection("faltantes").onSnapshot((snapshot) => {
         if (!snapshot.empty) {
           const faltantesNube = [];
-          snapshot.forEach((doc) => faltantesNube.push({ idDoc: doc.id, ...doc.data() }));
-          if (faltantesNube.length > 0) {
-            faltantes = faltantesNube;
-            guardarLocal();
-            if (filtroActual === 'faltantes') renderizarVistaFaltantes();
-          }
+          snapshot.forEach((doc) => {
+            faltantesNube.push({ ...doc.data(), idDoc: doc.id }); // <--- doc.id asignado a idDoc
+          });
+          faltantes = faltantesNube;
+          guardarLocal();
+          if (filtroActual === 'faltantes') renderizarVistaFaltantes();
+        } else {
+          faltantes = [];
+          guardarLocal();
+          if (filtroActual === 'faltantes') renderizarVistaFaltantes();
         }
       });
     }
@@ -1119,7 +1129,10 @@
     }
 
     async function eliminarFaltante(idDoc, pedirConfirmacion = true) {
+      if (!idDoc) return;
+
       if (!pedirConfirmacion || confirm('¿Eliminar esta deuda pendiente?')) {
+        // Eliminación en Firebase
         if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
           try { 
             await db.collection("faltantes").doc(idDoc).delete(); 
@@ -1128,6 +1141,7 @@
           }
         }
 
+        // Eliminación local e interfaz
         faltantes = faltantes.filter(f => f.idDoc !== idDoc);
         guardarLocal();
         if (filtroActual === 'faltantes') renderizarVistaFaltantes();
@@ -1414,7 +1428,10 @@
     }
 
     async function eliminarRegistro(idDoc) {
+      if (!idDoc) return;
+
       if (confirm('¿Eliminar esta venta permanentemente?')) {
+        // Si existe conexión a Firebase y no es un ID puramente local
         if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
           try { 
             await db.collection("ventas").doc(idDoc).delete(); 
@@ -1423,6 +1440,7 @@
           }
         }
 
+        // Eliminación local e interfaz
         datos = datos.filter(d => d.idDoc !== idDoc);
         guardarLocal();
         actualizarDashboard();
