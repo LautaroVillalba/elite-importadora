@@ -584,12 +584,13 @@
     // === CONFIGURACIÓN DE PERSISTENCIA (LOCAL + FIREBASE) =======
     // =============================================================
     const firebaseConfig = {
-      apiKey: "AIzaSyD-xXexampleKey12345678",
-      authDomain: "tu-proyecto.firebaseapp.com",
-      projectId: "tu-proyecto-id",
-      storageBucket: "tu-proyecto.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdef123456"
+      apiKey: "AIzaSyANWCCD4w5sF0Wenw2DOiXhyrYaVTEeyb0",
+      authDomain: "elite-importadora-db.firebaseapp.com",
+      projectId: "elite-importadora-db",
+      storageBucket: "elite-importadora-db.firebasestorage.app",
+      messagingSenderId: "393690440626",
+      appId: "1:393690440626:web:64bdef48378e40ad2bfaab",
+      measurementId: "G-P50SLQQ6M2"
     };
 
     let db = null;
@@ -960,6 +961,7 @@
     function abrirModal() {
       document.getElementById('input-fecha').value = fechaHoy;
       document.getElementById('modal-formulario').classList.add('active');
+      document.getElementById('input-cliente').focus();
     }
 
     function cerrarModal() { 
@@ -1149,6 +1151,28 @@
         obtenerCotizacionDolar();
       }
     };
+
+    // Escuchador para cerrar con ESC y confirmar con ENTER en el modal de ventas
+    document.addEventListener('keydown', function(event) {
+      const modalVenta = document.getElementById('modal-formulario');
+      
+      // Comprobar si el modal de ventas está visible
+      if (modalVenta && modalVenta.classList.contains('active')) {
+        
+        // Tecla ESC: Cerrar modal
+        if (event.key === 'Escape') {
+          cerrarModal();
+        }
+        
+        // Tecla ENTER: Guardar registro
+        if (event.key === 'Enter') {
+          event.preventDefault(); // Evita envíos accidentales si el foco está en un botón
+          guardarRegistro();
+        }
+      }
+    });
   </script>
 </body>
 </html>
+
+
