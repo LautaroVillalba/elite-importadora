@@ -1120,13 +1120,17 @@
 
     async function eliminarFaltante(idDoc, pedirConfirmacion = true) {
       if (!pedirConfirmacion || confirm('¿Eliminar esta deuda pendiente?')) {
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { 
+            await db.collection("faltantes").doc(idDoc).delete(); 
+          } catch(e) {
+            console.error("Error al eliminar deuda en Firebase:", e);
+          }
+        }
+
         faltantes = faltantes.filter(f => f.idDoc !== idDoc);
         guardarLocal();
         if (filtroActual === 'faltantes') renderizarVistaFaltantes();
-
-        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
-          try { await db.collection("faltantes").doc(idDoc).delete(); } catch(e){}
-        }
       }
     }
 
@@ -1411,13 +1415,17 @@
 
     async function eliminarRegistro(idDoc) {
       if (confirm('¿Eliminar esta venta permanentemente?')) {
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { 
+            await db.collection("ventas").doc(idDoc).delete(); 
+          } catch(e) {
+            console.error("Error al eliminar venta en Firebase:", e);
+          }
+        }
+
         datos = datos.filter(d => d.idDoc !== idDoc);
         guardarLocal();
         actualizarDashboard();
-
-        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
-          try { await db.collection("ventas").doc(idDoc).delete(); } catch(e){}
-        }
       }
     }
 
@@ -1682,6 +1690,7 @@
   </script>
 </body>
 </html>
+
 
 
 
