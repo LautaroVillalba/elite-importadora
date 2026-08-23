@@ -10,6 +10,9 @@
   <meta http-equiv="Expires" content="0"> 
   
   <title>ELITE IMPORTADORA - Control Inteligente de Ventas</title>
+
+  <!-- Favicon / Ícono de la pestaña -->
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1Xq1qS1m16sZfHkM9R9P8gH52s4sA4E1B">
   
   <!-- Chart.js para Gráficos -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -47,7 +50,11 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
-      padding: 24px;
+      padding: 16px;
+    }
+
+    @media (min-width: 768px) {
+      body { padding: 24px; }
     }
 
     header {
@@ -74,7 +81,11 @@
     }
 
     h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
-    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
+    
+    @media (min-width: 640px) {
+      .action-buttons { width: auto; }
+    }
 
     .btn {
       padding: 10px 16px;
@@ -84,6 +95,7 @@
       font-weight: 600;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       font-size: 13px;
     }
@@ -134,26 +146,39 @@
       background: var(--bg-color);
       color: var(--text-color);
       font-size: 13px;
-      min-width: 220px;
+      min-width: 200px;
+      width: 100%;
+    }
+
+    @media (min-width: 640px) {
+      .search-input { width: auto; }
     }
 
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
       margin-bottom: 24px;
     }
 
     .kpi-card {
       background: var(--card-bg);
-      padding: 20px;
+      padding: 16px;
       border-radius: 12px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-color);
+      min-width: 0;
+      word-break: break-word;
     }
 
-    .kpi-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
-    .kpi-value { font-size: 20px; font-weight: 700; }
+    .kpi-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+    .kpi-value { font-size: 18px; font-weight: 700; }
+
+    @media (min-width: 768px) {
+      .kpi-card { padding: 20px; }
+      .kpi-title { font-size: 12px; }
+      .kpi-value { font-size: 20px; }
+    }
 
     .dolar-card {
       background: linear-gradient(135deg, #065f46 0%, #047857 100%);
@@ -177,6 +202,8 @@
       margin-bottom: 8px;
       font-size: 13px;
       font-weight: 600;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .progress-bar-bg {
@@ -196,19 +223,26 @@
 
     .main-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 24px;
     }
 
-    @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } }
+    @media (min-width: 1025px) { .main-grid { grid-template-columns: 1fr 1fr; } }
 
     .card-box {
       background: var(--card-bg);
-      padding: 20px;
+      padding: 16px;
       border-radius: 12px;
       box-shadow: var(--shadow);
       border: 1px solid var(--border-color);
       margin-bottom: 24px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .card-box { padding: 20px; }
     }
 
     .box-title {
@@ -223,8 +257,19 @@
       gap: 10px;
     }
 
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th, td { padding: 12px 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 500px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+    
+    @media (min-width: 768px) {
+      th, td { padding: 12px 10px; font-size: 13px; }
+    }
+
     th { color: var(--text-muted); font-weight: 600; }
     .text-right { text-align: right; }
 
@@ -246,6 +291,17 @@
       background: rgba(16, 185, 129, 0.15);
       color: var(--success);
       border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-deuda {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .cliente-accordion {
@@ -286,6 +342,7 @@
       align-items: center;
       z-index: 1000;
       backdrop-filter: blur(4px);
+      padding: 16px;
     }
 
     .modal-overlay.active { display: flex; }
@@ -298,6 +355,8 @@
       max-width: 450px;
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
       border: 1px solid var(--border-color);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .form-group { margin-bottom: 14px; }
@@ -316,6 +375,13 @@
       text-align: center;
       margin-top: 14px;
     }
+
+    /* Adaptación del gráfico en teléfonos */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 250px;
+    }
   </style>
 </head>
 <body class="dark-theme">
@@ -331,7 +397,8 @@
     </div>
     
     <div class="action-buttons">
-      <button class="btn btn-danger" onclick="abrirModalGasto()"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
+      <button class="btn btn-danger" onclick="abrirModalGasto()"><i class="fa-solid fa-minus-circle"></i> Registrar Gastos</button>
+      <button class="btn btn-warning" style="background-color: #d97706; color: white;" onclick="abrirModalPagoFaltante()"><i class="fa-solid fa-clock-rotate-left"></i> Registrar Pago Faltante</button>
       <button class="btn btn-primary" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Nueva Venta Manual</button>
     </div>
   </header>
@@ -342,8 +409,9 @@
     <button class="filter-btn active" id="btn-filtro-todo" onclick="filtrarRango('todo')">Historial Completo</button>
     <button class="filter-btn" id="btn-filtro-semana" onclick="filtrarRango('semana')">Por Semanas</button>
     
-    <div style="margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <div style="margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%;">
       <input type="text" id="input-buscador" class="search-input" placeholder="🔍 Buscar cliente, concepto..." oninput="filtrarPorBuscador()">
+      <button class="filter-btn" id="btn-filtro-faltantes" onclick="filtrarRango('faltantes')" style="border-color: #f59e0b; color: #f59e0b;"><i class="fa-solid fa-file-invoice-dollar"></i> PAGOS FALTANTES</button>
       <button class="filter-btn" id="btn-filtro-clientes" onclick="filtrarRango('clientes')" style="border-color: var(--accent);"><i class="fa-solid fa-users"></i> CLIENTES</button>
       <button class="filter-btn" id="btn-filtro-stock" onclick="filtrarRango('stock')" style="border-color: #f59e0b;"><i class="fa-solid fa-boxes-stacked"></i> STOCK</button>
       <button class="filter-btn" id="btn-filtro-gastos" onclick="filtrarRango('gastos')" style="border-color: var(--danger);"><i class="fa-solid fa-wallet"></i> GASTOS</button>
@@ -375,14 +443,17 @@
     </div>
   </div>
 
-  <!-- Barra de Meta -->
+  <!-- Barra de Meta Mensual ($6.000.000) -->
   <div class="goal-box">
     <div class="goal-header">
       <span><i class="fa-solid fa-bullseye" style="color: var(--accent);"></i> Meta de Ganancia Limpia Mensual</span>
-      <span id="texto-meta">$ 0,00 / $ 5.000.000,00 (0%)</span>
+      <span id="texto-meta">$ 0,00 / $ 6.000.000,00 (0%)</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="barra-meta-progreso" style="width: 0%;"></div>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: right;" id="texto-falta-meta">
+      Falta: $ 6.000.000,00 para la meta
     </div>
   </div>
 
@@ -390,9 +461,11 @@
   <div class="main-grid" id="vista-dashboard">
     <div class="card-box">
       <div class="box-title">
-        <span><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Desglose por Semanas</span>
+        <span><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Desglose por Semanas (Mes Actual)</span>
       </div>
-      <canvas id="graficoEstadisticasGanancias" height="200"></canvas>
+      <div class="chart-container">
+        <canvas id="graficoEstadisticasGanancias"></canvas>
+      </div>
     </div>
 
     <div class="card-box">
@@ -404,12 +477,11 @@
           <button class="btn btn-success" style="padding: 4px 10px; font-size: 11px;" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
           <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
           
-          <!-- Inputs Ocultos para la lectura de archivos -->
           <input type="file" id="input-importar-excel" accept=".xlsx, .xls, .csv" style="display: none;" onchange="importarExcel(event)">
           <input type="file" id="input-importar-pdf" accept=".pdf" style="display: none;" onchange="importarPDF(event)">
         </div>
       </div>
-      <div style="overflow-x: auto;">
+      <div class="table-responsive">
         <table>
           <thead id="tabla-encabezado"></thead>
           <tbody id="tabla-cuerpo"></tbody>
@@ -428,7 +500,7 @@
     <div class="box-title">
       <span><i class="fa-solid fa-calendar-check" style="color: var(--accent);"></i> Resumen de Ganancias Totales Mes a Mes</span>
     </div>
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
       <table>
         <thead>
           <tr>
@@ -441,6 +513,31 @@
         </thead>
         <tbody id="tabla-cuerpo-meses"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Vista Pagos Faltantes -->
+  <div id="vista-faltantes" style="display: none;">
+    <div class="card-box">
+      <div class="box-title">
+        <span><i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b;"></i> Registro de Pagos Faltantes / Deudas Pendientes</span>
+        <button class="btn btn-warning" style="background-color: #d97706; color: white;" onclick="abrirModalPagoFaltante()"><i class="fa-solid fa-plus"></i> Registrar Deuda</button>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Cliente / Deudor</th>
+              <th class="text-right">Costo Compra / Importación</th>
+              <th class="text-right">Monto a Pagar</th>
+              <th class="text-center" style="text-align: center;">Estado / Acción</th>
+              <th class="text-right">Eliminar</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-cuerpo-faltantes"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -470,7 +567,7 @@
         <span><i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i> Inventario de Productos en Stock</span>
         <button class="btn btn-accent" onclick="abrirModalStock()"><i class="fa-solid fa-plus"></i> Agregar Producto</button>
       </div>
-      <div style="overflow-x: auto;">
+      <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -494,7 +591,7 @@
         <span><i class="fa-solid fa-wallet" style="color: var(--danger);"></i> Control de Gastos Operativos</span>
         <button class="btn btn-danger" onclick="abrirModalGasto()"><i class="fa-solid fa-plus"></i> Añadir Nuevo Gasto</button>
       </div>
-      <div style="overflow-x: auto;">
+      <div class="table-responsive">
         <table>
           <thead>
             <tr>
@@ -511,9 +608,12 @@
   </div>
 
   <!-- Modales -->
+  
+  <!-- Modal Venta / Edición -->
   <div class="modal-overlay" id="modal-formulario">
     <div class="modal">
-      <h3 style="margin-top:0;">Registrar Operación</h3>
+      <h3 style="margin-top:0;" id="modal-venta-titulo">Registrar Operación</h3>
+      <input type="hidden" id="input-edit-id">
       <div class="form-group">
         <label for="input-fecha">Fecha de Calendario</label>
         <input type="date" id="input-fecha" class="form-control">
@@ -540,15 +640,16 @@
         <input type="number" id="input-compra" class="form-control" placeholder="0.00">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="guardarRegistro()">Guardar Movimiento</button>
+        <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar (Esc)</button>
+        <button class="btn btn-primary" id="btn-guardar-venta" onclick="guardarRegistro()">Guardar Movimiento (Enter)</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal Gastos -->
   <div class="modal-overlay" id="modal-gasto">
     <div class="modal">
-      <h3 style="margin-top:0;"><i class="fa-solid fa-wallet" style="color: var(--danger);"></i> Registrar Gasto</h3>
+      <h3 style="margin-top:0;"><i class="fa-solid fa-wallet" style="color: var(--danger);"></i> Registrar Gastos</h3>
       <div class="form-group">
         <label for="input-gasto-fecha">Fecha del Gasto</label>
         <input type="date" id="input-gasto-fecha" class="form-control">
@@ -562,12 +663,40 @@
         <input type="number" id="input-gasto-monto" class="form-control" placeholder="0.00">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="cerrarModalGasto()">Cancelar</button>
-        <button class="btn btn-danger" onclick="guardarGasto()">Guardar Gasto</button>
+        <button class="btn btn-secondary" onclick="cerrarModalGasto()">Cancelar (Esc)</button>
+        <button class="btn btn-danger" onclick="guardarGasto()">Guardar Gastos (Enter)</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal Pagos Faltantes -->
+  <div class="modal-overlay" id="modal-faltante">
+    <div class="modal">
+      <h3 style="margin-top:0;"><i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b;"></i> Registrar Pago Faltante</h3>
+      <div class="form-group">
+        <label for="input-faltante-fecha">Fecha de Calendario</label>
+        <input type="date" id="input-faltante-fecha" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="input-faltante-cliente">Nombre del Cliente / Deudor</label>
+        <input type="text" id="input-faltante-cliente" class="form-control" placeholder="Ej: JUAN PEREZ">
+      </div>
+      <div class="form-group">
+        <label for="input-faltante-compra">Gasto de Compras / Costos ($)</label>
+        <input type="number" id="input-faltante-compra" class="form-control" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label for="input-faltante-monto">Monto Pendiente a Pagar ($)</label>
+        <input type="number" id="input-faltante-monto" class="form-control" placeholder="0.00">
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="cerrarModalPagoFaltante()">Cancelar (Esc)</button>
+        <button class="btn btn-warning" style="background-color: #d97706; color: white;" onclick="guardarPagoFaltante()">Guardar Deuda (Enter)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Stock -->
   <div class="modal-overlay" id="modal-stock">
     <div class="modal">
       <h3 style="margin-top:0;"><i class="fa-solid fa-box" style="color: #f59e0b;"></i> Agregar Producto al Stock</h3>
@@ -588,8 +717,8 @@
         <input type="number" id="input-stock-precio" class="form-control" placeholder="0.00">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-        <button class="btn btn-secondary" onclick="cerrarModalStock()">Cancelar</button>
-        <button class="btn btn-accent" onclick="guardarStock()">Guardar Producto</button>
+        <button class="btn btn-secondary" onclick="cerrarModalStock()">Cancelar (Esc)</button>
+        <button class="btn btn-accent" onclick="guardarStock()">Guardar Producto (Enter)</button>
       </div>
     </div>
   </div>
@@ -622,11 +751,12 @@
     }
 
     const fechaHoy = new Date().toISOString().split('T')[0];
-    const META_GANANCIA_MENSUAL = 5000000;
+    const META_GANANCIA_MENSUAL = 6000000; // Meta fija de $6.000.000
 
     let datos = JSON.parse(localStorage.getItem('elite_ventas')) || [];
     let gastos = JSON.parse(localStorage.getItem('elite_gastos')) || [];
     let stockList = JSON.parse(localStorage.getItem('elite_stock')) || [];
+    let faltantes = JSON.parse(localStorage.getItem('elite_faltantes')) || [];
 
     let filtroActual = 'todo';
     let miGraficoEstadisticas = null;
@@ -636,6 +766,7 @@
       localStorage.setItem('elite_ventas', JSON.stringify(datos));
       localStorage.setItem('elite_gastos', JSON.stringify(gastos));
       localStorage.setItem('elite_stock', JSON.stringify(stockList));
+      localStorage.setItem('elite_faltantes', JSON.stringify(faltantes));
     }
 
     function ordenarVentas() {
@@ -651,12 +782,6 @@
       return "$ " + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function obtenerNumeroSemana(date) {
-      const primeroEnero = new Date(date.getFullYear(), 0, 1);
-      const dias = Math.floor((date - primeroEnero) / (24 * 60 * 60 * 1000));
-      return Math.ceil((dias + primeroEnero.getDay() + 1) / 7);
-    }
-
     async function obtenerCotizacionDolar() {
       try {
         const respuesta = await fetch('https://dolarapi.com/v1/dolares/blue');
@@ -670,7 +795,7 @@
       }
     }
 
-    // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) CON PRESERVACIÓN LOCAL ---
+    // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) ---
     if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
       db.collection("ventas").onSnapshot((snapshot) => {
         if (!snapshot.empty) {
@@ -709,6 +834,18 @@
           }
         }
       });
+
+      db.collection("faltantes").onSnapshot((snapshot) => {
+        if (!snapshot.empty) {
+          const faltantesNube = [];
+          snapshot.forEach((doc) => faltantesNube.push({ idDoc: doc.id, ...doc.data() }));
+          if (faltantesNube.length > 0) {
+            faltantes = faltantesNube;
+            guardarLocal();
+            if (filtroActual === 'faltantes') renderizarVistaFaltantes();
+          }
+        }
+      });
     }
 
     function calcularTotalGastos() {
@@ -728,8 +865,11 @@
       document.getElementById('kpi-ganancia').innerText = formatearMoneda(gananciaLimpia);
 
       const porcentaje = Math.min(Math.round((gananciaLimpia / META_GANANCIA_MENSUAL) * 100), 100);
+      const faltaDinero = Math.max(0, META_GANANCIA_MENSUAL - gananciaLimpia);
+
       document.getElementById('texto-meta').innerText = `${formatearMoneda(Math.max(0, gananciaLimpia))} / ${formatearMoneda(META_GANANCIA_MENSUAL)} (${porcentaje}%)`;
       document.getElementById('barra-meta-progreso').style.width = `${Math.max(0, porcentaje)}%`;
+      document.getElementById('texto-falta-meta').innerText = `Falta: ${formatearMoneda(faltaDinero)} para llegar a la meta`;
 
       renderizarTablaVentas();
       renderizarCuadroMesAMes();
@@ -748,7 +888,7 @@
           <th class="text-right">Venta</th>
           <th class="text-right">Compra</th>
           <th class="text-right">Ganancia Directa</th>
-          <th class="text-right">Acción</th>
+          <th class="text-right">Acciones</th>
         </tr>
       `;
 
@@ -775,6 +915,7 @@
           <td class="text-right" style="color: #f59e0b;">${formatearMoneda(item.compra)}</td>
           <td class="text-right" style="color: var(--success); font-weight: bold;">${formatearMoneda(ganancia)}</td>
           <td class="text-right">
+            <button class="btn btn-secondary" style="padding: 2px 6px; font-size: 10px; margin-right: 4px;" onclick="editarRegistro('${item.idDoc}')"><i class="fa-solid fa-pen"></i></button>
             <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="eliminarRegistro('${item.idDoc}')"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
@@ -830,38 +971,54 @@
       });
     }
 
+    // --- GRÁFICO DE VENTAS POR SEMANAS DE 7 DÍAS ---
     function renderizarGraficoSemanas() {
       const ctx = document.getElementById('graficoEstadisticasGanancias').getContext('2d');
-      const semanasMap = {};
+      const hoy = new Date();
+      const mesActual = hoy.getMonth();
+      const anoActual = hoy.getFullYear();
+
+      // Bloques de 7 días del mes
+      const bloques = {
+        'Días 1 - 7': 0,
+        'Días 8 - 14': 0,
+        'Días 15 - 21': 0,
+        'Días 22+': 0
+      };
 
       datos.forEach(item => {
         if (!item.fecha) return;
         const d = new Date(item.fecha + 'T00:00:00');
-        const sem = `Sem. ${obtenerNumeroSemana(d)}`;
-        if (!semanasMap[sem]) semanasMap[sem] = 0;
-        semanasMap[sem] += (Number(item.venta) - Number(item.compra));
+        if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
+          const dia = d.getDate();
+          const ganancia = Number(item.venta) - Number(item.compra);
+
+          if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] += ganancia;
+          else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] += ganancia;
+          else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] += ganancia;
+          else bloques['Días 22+'] += ganancia;
+        }
       });
 
-      const labels = Object.keys(semanasMap);
-      const values = Object.values(semanasMap);
+      const labels = Object.keys(bloques);
+      const values = Object.values(bloques);
 
       if (miGraficoEstadisticas) miGraficoEstadisticas.destroy();
 
       miGraficoEstadisticas = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: labels,
           datasets: [{
-            label: 'Ganancia Limpia ($)',
+            label: 'Ganancia Limpia por Bloque ($)',
             data: values,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            fill: true,
-            tension: 0.3
+            backgroundColor: '#3b82f6',
+            borderRadius: 6
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { labels: { color: '#f8fafc' } } },
           scales: {
             x: { ticks: { color: '#94a3b8' } },
@@ -871,6 +1028,109 @@
       });
     }
 
+    // --- PAGOS FALTANTES ---
+    function renderizarVistaFaltantes() {
+      const tbody = document.getElementById('tabla-cuerpo-faltantes');
+      tbody.innerHTML = '';
+
+      faltantes.forEach((f) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${f.fecha}</td>
+          <td><strong>${f.cliente}</strong></td>
+          <td class="text-right" style="color: #f59e0b;">${formatearMoneda(f.compra)}</td>
+          <td class="text-right" style="color: var(--danger); font-weight: bold;">${formatearMoneda(f.monto)}</td>
+          <td class="text-center" style="text-align: center;">
+            <button class="btn btn-success" style="padding: 4px 8px; font-size: 11px;" onclick="marcarPagoCancelado('${f.idDoc}')">
+              <i class="fa-solid fa-check"></i> LISTO
+            </button>
+          </td>
+          <td class="text-right">
+            <button class="btn btn-danger" style="padding: 2px 6px; font-size: 10px;" onclick="eliminarFaltante('${f.idDoc}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function marcarPagoCancelado(idDoc) {
+      const faltante = faltantes.find(f => f.idDoc === idDoc);
+      if (!faltante) return;
+
+      if (confirm(`¿Confirmar que el cliente ${faltante.cliente} pagó la deuda de ${formatearMoneda(faltante.monto)}?`)) {
+        // Mover a Ventas Totales
+        const nuevaVenta = {
+          idDoc: 'loc_' + Date.now(),
+          fecha: fechaHoy,
+          cliente: faltante.cliente,
+          venta: Number(faltante.monto),
+          compra: Number(faltante.compra),
+          pago: 'Transferencia',
+          creado: new Date()
+        };
+
+        datos.unshift(nuevaVenta);
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+          try { await db.collection("ventas").add(nuevaVenta); } catch(e){}
+        }
+
+        // Eliminar de Pagos Faltantes
+        await eliminarFaltante(idDoc, false);
+
+        guardarLocal();
+        actualizarDashboard();
+        renderizarVistaFaltantes();
+        alert('¡El pago faltante fue marcado como CANCELADO y transferido exitosamente a Ventas Totales!');
+      }
+    }
+
+    function abrirModalPagoFaltante() {
+      document.getElementById('input-faltante-fecha').value = fechaHoy;
+      document.getElementById('modal-faltante').classList.add('active');
+      document.getElementById('input-faltante-cliente').focus();
+    }
+
+    function cerrarModalPagoFaltante() {
+      document.getElementById('modal-faltante').classList.remove('active');
+    }
+
+    async function guardarPagoFaltante() {
+      const fecha = document.getElementById('input-faltante-fecha').value;
+      const cliente = document.getElementById('input-faltante-cliente').value.toUpperCase();
+      const compra = parseFloat(document.getElementById('input-faltante-compra').value) || 0;
+      const monto = parseFloat(document.getElementById('input-faltante-monto').value) || 0;
+
+      if (!cliente || monto <= 0) return alert('Ingresa el cliente y un monto a pagar válido.');
+
+      const nuevoFaltante = { idDoc: 'loc_' + Date.now(), fecha, cliente, compra, monto, creado: new Date() };
+      faltantes.unshift(nuevoFaltante);
+      guardarLocal();
+
+      if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+        try { await db.collection("faltantes").add(nuevoFaltante); } catch(e){}
+      }
+
+      cerrarModalPagoFaltante();
+      document.getElementById('input-faltante-cliente').value = '';
+      document.getElementById('input-faltante-compra').value = '';
+      document.getElementById('input-faltante-monto').value = '';
+
+      if (filtroActual === 'faltantes') renderizarVistaFaltantes();
+    }
+
+    async function eliminarFaltante(idDoc, pedirConfirmacion = true) {
+      if (!pedirConfirmacion || confirm('¿Eliminar esta deuda pendiente?')) {
+        faltantes = faltantes.filter(f => f.idDoc !== idDoc);
+        guardarLocal();
+        if (filtroActual === 'faltantes') renderizarVistaFaltantes();
+
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
+          try { await db.collection("faltantes").doc(idDoc).delete(); } catch(e){}
+        }
+      }
+    }
+
+    // --- VISTA CLIENTES ---
     function renderizarVistaClientes() {
       const contenedor = document.getElementById('contenedor-acordeon-clientes');
       const modoOrden = document.getElementById('select-orden-cliente').value;
@@ -977,6 +1237,7 @@
       document.getElementById('vista-clientes').style.display = 'none';
       document.getElementById('vista-stock').style.display = 'none';
       document.getElementById('vista-gastos').style.display = 'none';
+      document.getElementById('vista-faltantes').style.display = 'none';
 
       if (rango === 'clientes') {
         document.getElementById('vista-clientes').style.display = 'block';
@@ -987,6 +1248,9 @@
       } else if (rango === 'gastos') {
         document.getElementById('vista-gastos').style.display = 'block';
         renderizarVistaGastos();
+      } else if (rango === 'faltantes') {
+        document.getElementById('vista-faltantes').style.display = 'block';
+        renderizarVistaFaltantes();
       } else {
         document.getElementById('vista-dashboard').style.display = 'grid';
         document.getElementById('seccion-mes-a-mes').style.display = 'block';
@@ -1004,10 +1268,33 @@
       renderizarTablaVentas();
     }
 
+    // --- EDICIÓN Y CREACIÓN DE VENTAS ---
     function abrirModal() {
+      document.getElementById('input-edit-id').value = '';
+      document.getElementById('modal-venta-titulo').innerText = 'Registrar Operación';
+      document.getElementById('btn-guardar-venta').innerText = 'Guardar Movimiento (Enter)';
       document.getElementById('input-fecha').value = fechaHoy;
+      document.getElementById('input-cliente').value = '';
+      document.getElementById('input-venta').value = '';
+      document.getElementById('input-compra').value = '';
       document.getElementById('modal-formulario').classList.add('active');
       document.getElementById('input-cliente').focus();
+    }
+
+    function editarRegistro(idDoc) {
+      const reg = datos.find(d => d.idDoc === idDoc);
+      if (!reg) return;
+
+      document.getElementById('input-edit-id').value = idDoc;
+      document.getElementById('modal-venta-titulo').innerText = 'Editar Operación';
+      document.getElementById('btn-guardar-venta').innerText = 'Actualizar Cambios (Enter)';
+      document.getElementById('input-fecha').value = reg.fecha;
+      document.getElementById('input-cliente').value = reg.cliente;
+      document.getElementById('input-pago').value = reg.pago || 'Transferencia';
+      document.getElementById('input-venta').value = reg.venta;
+      document.getElementById('input-compra').value = reg.compra;
+
+      document.getElementById('modal-formulario').classList.add('active');
     }
 
     function cerrarModal() { 
@@ -1015,6 +1302,7 @@
     }
 
     async function guardarRegistro() {
+      const editId = document.getElementById('input-edit-id').value;
       const fecha = document.getElementById('input-fecha').value;
       const cliente = document.getElementById('input-cliente').value.toUpperCase();
       const pago = document.getElementById('input-pago').value;
@@ -1023,24 +1311,42 @@
 
       if (!cliente || venta <= 0) return alert('Ingresa un cliente y un monto válido.');
 
-      const nuevoRegistro = { idDoc: 'loc_' + Date.now(), fecha, cliente, venta, compra, pago, creado: new Date() };
-      datos.unshift(nuevoRegistro);
-      guardarLocal();
-      actualizarDashboard();
+      if (editId) {
+        // Modo Edición
+        const index = datos.findIndex(d => d.idDoc === editId);
+        if (index !== -1) {
+          datos[index].fecha = fecha;
+          datos[index].cliente = cliente;
+          datos[index].pago = pago;
+          datos[index].venta = venta;
+          datos[index].compra = compra;
+        }
 
-      if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
-        try { await db.collection("ventas").add({ fecha, cliente, venta, compra, pago, creado: new Date() }); } catch(e){}
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !editId.startsWith('loc_')) {
+          try {
+            await db.collection("ventas").doc(editId).update({ fecha, cliente, pago, venta, compra });
+          } catch(e){}
+        }
+      } else {
+        // Modo Nuevo Registro
+        const nuevoRegistro = { idDoc: 'loc_' + Date.now(), fecha, cliente, venta, compra, pago, creado: new Date() };
+        datos.unshift(nuevoRegistro);
+
+        if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+          try { await db.collection("ventas").add({ fecha, cliente, venta, compra, pago, creado: new Date() }); } catch(e){}
+        }
       }
 
+      guardarLocal();
+      actualizarDashboard();
       cerrarModal();
-      document.getElementById('input-cliente').value = '';
-      document.getElementById('input-venta').value = '';
-      document.getElementById('input-compra').value = '';
     }
 
+    // --- GASTOS ---
     function abrirModalGasto() {
       document.getElementById('input-gasto-fecha').value = fechaHoy;
       document.getElementById('modal-gasto').classList.add('active');
+      document.getElementById('input-gasto-concepto').focus();
     }
 
     function cerrarModalGasto() { 
@@ -1069,8 +1375,10 @@
       document.getElementById('input-gasto-monto').value = '';
     }
 
+    // --- STOCK ---
     function abrirModalStock() { 
       document.getElementById('modal-stock').classList.add('active'); 
+      document.getElementById('input-stock-nombre').focus();
     }
 
     function cerrarModalStock() { 
@@ -1138,7 +1446,7 @@
       }
     }
 
-    // --- NUEVAS FUNCIONES PARA IMPORTACIÓN/CARGA DE EXCEL Y PDF (APPEND / ACUMULATIVO) ---
+    // --- IMPORTACIÓN Y EXPORTACIÓN ---
     async function importarExcel(event) {
       const archivo = event.target.files[0];
       if (!archivo) return;
@@ -1156,7 +1464,6 @@
           let nuevasVentas = [];
           
           filas.forEach((row, index) => {
-            // Se realiza la lectura buscando nombres de columnas comunes
             const fecha = row['Fecha'] || row['FECHA'] || row['fecha'] || fechaHoy;
             const cliente = row['Cliente / Concepto'] || row['Cliente'] || row['CLIENTE'] || row['Concepto'] || `VENTA EXCEL ${index + 1}`;
             const pago = row['Método de Pago'] || row['Pago'] || row['PAGO'] || 'Transferencia';
@@ -1179,12 +1486,10 @@
 
           if (nuevasVentas.length === 0) return alert('No se encontraron ventas válidas en el Excel.');
 
-          // Anexar sin borrar los datos existentes
           datos = datos.concat(nuevasVentas);
           guardarLocal();
           actualizarDashboard();
 
-          // Guardar también en Firebase si está configurado
           if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
             for (const item of nuevasVentas) {
               try {
@@ -1204,7 +1509,7 @@
         } catch (err) {
           alert('Hubo un problema al procesar el archivo Excel. Verifica su formato.');
         }
-        event.target.value = ''; // Limpiar el input para nuevas lecturas
+        event.target.value = '';
       };
       reader.readAsArrayBuffer(archivo);
     }
@@ -1214,7 +1519,7 @@
       if (!archivo) return;
 
       if (typeof pdfjsLib === 'undefined') {
-        return alert('La librería PDF.js no se cargó correctamente. Revisa la conexión.');
+        return alert('La librería PDF.js no se cargó correctamente.');
       }
 
       const reader = new FileReader();
@@ -1231,7 +1536,6 @@
             textoCompleto += pageText + ' ';
           }
 
-          // Extraer posibles montos del PDF utilizando Expresiones Regulares ($ XXX.XXX,XX)
           const coincidenciasMontos = textoCompleto.match(/\$?\s?\d+([.,]\d{3})*([.,]\d{2})/g);
           
           let montoDetectado = 0;
@@ -1244,13 +1548,13 @@
             montoDetectado = parseFloat(ultimoMontoStr) || 0;
           }
 
-          const nombreCliente = prompt("Carga desde PDF completada. Confirma o ingresa el nombre del cliente/concepto:", "COMPROBANTE PDF");
+          const nombreCliente = prompt("Carga desde PDF completada. Confirma el nombre del cliente:", "COMPROBANTE PDF");
           if (!nombreCliente) return;
 
           const montoVentaStr = prompt("Monto de Venta detectado:", montoDetectado || 0);
           const ventaFinal = parseFloat(montoVentaStr) || 0;
 
-          if (ventaFinal <= 0) return alert('No se registró la venta porque el monto ingresado no es válido.');
+          if (ventaFinal <= 0) return alert('No se registró la venta por monto inválido.');
 
           const nuevoRegistro = {
             idDoc: 'loc_' + Date.now(),
@@ -1262,7 +1566,6 @@
             creado: new Date()
           };
 
-          // Anexar sin borrar los datos acumulados
           datos.unshift(nuevoRegistro);
           guardarLocal();
           actualizarDashboard();
@@ -1280,7 +1583,7 @@
             } catch(e){}
           }
 
-          alert('¡Venta desde PDF registrada y agregada exitosamente al historial!');
+          alert('¡Venta desde PDF registrada y agregada exitosamente!');
         } catch (err) {
           alert('No se pudo procesar el archivo PDF.');
         }
@@ -1289,7 +1592,6 @@
       reader.readAsArrayBuffer(archivo);
     }
 
-    // --- FUNCIONES PARA EXPORTAR REGISTROS (EXCEL Y PDF) ---
     function exportarExcel() {
       if (datos.length === 0) return alert('No hay ventas registradas para exportar.');
       
@@ -1347,24 +1649,40 @@
       }
     };
 
-    // Escuchador para cerrar con ESC y confirmar con ENTER en el modal de ventas
+    // --- MANEJO TECLAS ESC Y ENTER EN MODALES ---
     document.addEventListener('keydown', function(event) {
-      const modalVenta = document.getElementById('modal-formulario');
-      
-      if (modalVenta && modalVenta.classList.contains('active')) {
-        if (event.key === 'Escape') {
-          cerrarModal();
-        }
-        
-        if (event.key === 'Enter') {
+      if (event.key === 'Escape') {
+        cerrarModal();
+        cerrarModalGasto();
+        cerrarModalPagoFaltante();
+        cerrarModalStock();
+      }
+
+      if (event.key === 'Enter') {
+        const modalVenta = document.getElementById('modal-formulario');
+        const modalGasto = document.getElementById('modal-gasto');
+        const modalFaltante = document.getElementById('modal-faltante');
+        const modalStock = document.getElementById('modal-stock');
+
+        if (modalVenta && modalVenta.classList.contains('active')) {
           event.preventDefault();
           guardarRegistro();
+        } else if (modalGasto && modalGasto.classList.contains('active')) {
+          event.preventDefault();
+          guardarGasto();
+        } else if (modalFaltante && modalFaltante.classList.contains('active')) {
+          event.preventDefault();
+          guardarPagoFaltante();
+        } else if (modalStock && modalStock.classList.contains('active')) {
+          event.preventDefault();
+          guardarStock();
         }
       }
     });
   </script>
 </body>
 </html>
+
 
 
 
