@@ -16,10 +16,11 @@
   <!-- FontAwesome para Íconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Librerías de Exportación (Excel y PDF) -->
+  <!-- Librerías de Exportación e Importación (Excel, PDF y PDF.js para Lectura) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
   <!-- Librerías de Firebase SDK v9 (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -397,9 +398,15 @@
     <div class="card-box">
       <div class="box-title">
         <span id="titulo-tabla"><i class="fa-solid fa-receipt"></i> Historial de Ventas</span>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-accent" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('input-importar-excel').click()"><i class="fa-solid fa-file-import"></i> Cargar Excel</button>
+          <button class="btn btn-accent" style="padding: 4px 10px; font-size: 11px; background-color: #8b5cf6;" onclick="document.getElementById('input-importar-pdf').click()"><i class="fa-solid fa-file-pdf"></i> Cargar PDF</button>
           <button class="btn btn-success" style="padding: 4px 10px; font-size: 11px;" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
           <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+          
+          <!-- Inputs Ocultos para la lectura de archivos -->
+          <input type="file" id="input-importar-excel" accept=".xlsx, .xls, .csv" style="display: none;" onchange="importarExcel(event)">
+          <input type="file" id="input-importar-pdf" accept=".pdf" style="display: none;" onchange="importarPDF(event)">
         </div>
       </div>
       <div style="overflow-x: auto;">
@@ -588,6 +595,11 @@
   </div>
 
   <script>
+    // Configuración de PDF.js para lectura de PDF
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+
     // =============================================================
     // === CONFIGURACIÓN DE PERSISTENCIA (LOCAL + FIREBASE) =======
     // =============================================================
@@ -1126,6 +1138,157 @@
       }
     }
 
+    // --- NUEVAS FUNCIONES PARA IMPORTACIÓN/CARGA DE EXCEL Y PDF (APPEND / ACUMULATIVO) ---
+    async function importarExcel(event) {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const primeraHoja = workbook.SheetNames[0];
+          const filas = XLSX.utils.sheet_to_json(workbook.Sheets[primeraHoja]);
+
+          if (filas.length === 0) return alert('El archivo Excel no contiene filas de datos.');
+
+          let nuevasVentas = [];
+          
+          filas.forEach((row, index) => {
+            // Se realiza la lectura buscando nombres de columnas comunes
+            const fecha = row['Fecha'] || row['FECHA'] || row['fecha'] || fechaHoy;
+            const cliente = row['Cliente / Concepto'] || row['Cliente'] || row['CLIENTE'] || row['Concepto'] || `VENTA EXCEL ${index + 1}`;
+            const pago = row['Método de Pago'] || row['Pago'] || row['PAGO'] || 'Transferencia';
+            const venta = parseFloat(row['Monto Venta ($)'] || row['Venta'] || row['VENTA'] || row['Monto'] || 0);
+            const compra = parseFloat(row['Monto Compra ($)'] || row['Compra'] || row['COMPRA'] || row['Costo'] || 0);
+
+            if (venta > 0) {
+              const reg = {
+                idDoc: 'loc_' + Date.now() + '_' + index,
+                fecha: String(fecha).trim(),
+                cliente: String(cliente).trim().toUpperCase(),
+                pago: String(pago).trim(),
+                venta,
+                compra,
+                creado: new Date()
+              };
+              nuevasVentas.push(reg);
+            }
+          });
+
+          if (nuevasVentas.length === 0) return alert('No se encontraron ventas válidas en el Excel.');
+
+          // Anexar sin borrar los datos existentes
+          datos = datos.concat(nuevasVentas);
+          guardarLocal();
+          actualizarDashboard();
+
+          // Guardar también en Firebase si está configurado
+          if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+            for (const item of nuevasVentas) {
+              try {
+                await db.collection("ventas").add({
+                  fecha: item.fecha,
+                  cliente: item.cliente,
+                  venta: item.venta,
+                  compra: item.compra,
+                  pago: item.pago,
+                  creado: new Date()
+                });
+              } catch(e) {}
+            }
+          }
+
+          alert(`¡Se importaron correctamente ${nuevasVentas.length} ventas desde el Excel!`);
+        } catch (err) {
+          alert('Hubo un problema al procesar el archivo Excel. Verifica su formato.');
+        }
+        event.target.value = ''; // Limpiar el input para nuevas lecturas
+      };
+      reader.readAsArrayBuffer(archivo);
+    }
+
+    async function importarPDF(event) {
+      const archivo = event.target.files[0];
+      if (!archivo) return;
+
+      if (typeof pdfjsLib === 'undefined') {
+        return alert('La librería PDF.js no se cargó correctamente. Revisa la conexión.');
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const typedarray = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          let textoCompleto = '';
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            textoCompleto += pageText + ' ';
+          }
+
+          // Extraer posibles montos del PDF utilizando Expresiones Regulares ($ XXX.XXX,XX)
+          const coincidenciasMontos = textoCompleto.match(/\$?\s?\d+([.,]\d{3})*([.,]\d{2})/g);
+          
+          let montoDetectado = 0;
+          if (coincidenciasMontos && coincidenciasMontos.length > 0) {
+            const ultimoMontoStr = coincidenciasMontos[coincidenciasMontos.length - 1]
+              .replace('$', '')
+              .replace(/\./g, '')
+              .replace(',', '.')
+              .trim();
+            montoDetectado = parseFloat(ultimoMontoStr) || 0;
+          }
+
+          const nombreCliente = prompt("Carga desde PDF completada. Confirma o ingresa el nombre del cliente/concepto:", "COMPROBANTE PDF");
+          if (!nombreCliente) return;
+
+          const montoVentaStr = prompt("Monto de Venta detectado:", montoDetectado || 0);
+          const ventaFinal = parseFloat(montoVentaStr) || 0;
+
+          if (ventaFinal <= 0) return alert('No se registró la venta porque el monto ingresado no es válido.');
+
+          const nuevoRegistro = {
+            idDoc: 'loc_' + Date.now(),
+            fecha: fechaHoy,
+            cliente: nombreCliente.trim().toUpperCase(),
+            pago: 'Transferencia',
+            venta: ventaFinal,
+            compra: 0,
+            creado: new Date()
+          };
+
+          // Anexar sin borrar los datos acumulados
+          datos.unshift(nuevoRegistro);
+          guardarLocal();
+          actualizarDashboard();
+
+          if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
+            try {
+              await db.collection("ventas").add({
+                fecha: nuevoRegistro.fecha,
+                cliente: nuevoRegistro.cliente,
+                venta: nuevoRegistro.venta,
+                compra: nuevoRegistro.compra,
+                pago: nuevoRegistro.pago,
+                creado: new Date()
+              });
+            } catch(e){}
+          }
+
+          alert('¡Venta desde PDF registrada y agregada exitosamente al historial!');
+        } catch (err) {
+          alert('No se pudo procesar el archivo PDF.');
+        }
+        event.target.value = '';
+      };
+      reader.readAsArrayBuffer(archivo);
+    }
+
     // --- FUNCIONES PARA EXPORTAR REGISTROS (EXCEL Y PDF) ---
     function exportarExcel() {
       if (datos.length === 0) return alert('No hay ventas registradas para exportar.');
@@ -1202,6 +1365,7 @@
   </script>
 </body>
 </html>
+
 
 
 
