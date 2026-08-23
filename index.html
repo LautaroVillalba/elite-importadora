@@ -16,6 +16,11 @@
   <!-- FontAwesome para Íconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- Librerías de Exportación (Excel y PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
   <!-- Librerías de Firebase SDK v9 (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -327,7 +332,6 @@
     <div class="action-buttons">
       <button class="btn btn-danger" onclick="abrirModalGasto()"><i class="fa-solid fa-minus-circle"></i> Registrar Gasto</button>
       <button class="btn btn-primary" onclick="abrirModal()"><i class="fa-solid fa-plus"></i> Nueva Venta Manual</button>
-      <button class="btn btn-secondary" onclick="restablecerDatosNube()"><i class="fa-solid fa-cloud-arrow-up"></i> Cargar Datos Iniciales PDF</button>
     </div>
   </header>
 
@@ -393,6 +397,10 @@
     <div class="card-box">
       <div class="box-title">
         <span id="titulo-tabla"><i class="fa-solid fa-receipt"></i> Historial de Ventas</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-success" style="padding: 4px 10px; font-size: 11px;" onclick="exportarExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+          <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+        </div>
       </div>
       <div style="overflow-x: auto;">
         <table>
@@ -618,6 +626,15 @@
       localStorage.setItem('elite_stock', JSON.stringify(stockList));
     }
 
+    function ordenarVentas() {
+      datos.sort((a, b) => {
+        const fechaA = new Date(a.fecha);
+        const fechaB = new Date(b.fecha);
+        if (fechaB - fechaA !== 0) return fechaB - fechaA;
+        return Number(b.venta) - Number(a.venta);
+      });
+    }
+
     function formatearMoneda(val) {
       return "$ " + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
@@ -641,28 +658,44 @@
       }
     }
 
-    // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) CON FALLBACK LOCAL ---
+    // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) CON PRESERVACIÓN LOCAL ---
     if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
       db.collection("ventas").onSnapshot((snapshot) => {
-        datos = [];
-        snapshot.forEach((doc) => datos.push({ idDoc: doc.id, ...doc.data() }));
-        guardarLocal();
-        actualizarDashboard();
+        if (!snapshot.empty) {
+          const datosNube = [];
+          snapshot.forEach((doc) => datosNube.push({ idDoc: doc.id, ...doc.data() }));
+          if (datosNube.length > 0) {
+            datos = datosNube;
+            ordenarVentas();
+            guardarLocal();
+            actualizarDashboard();
+          }
+        }
       });
 
       db.collection("gastos").onSnapshot((snapshot) => {
-        gastos = [];
-        snapshot.forEach((doc) => gastos.push({ idDoc: doc.id, ...doc.data() }));
-        guardarLocal();
-        actualizarDashboard();
-        if (filtroActual === 'gastos') renderizarVistaGastos();
+        if (!snapshot.empty) {
+          const gastosNube = [];
+          snapshot.forEach((doc) => gastosNube.push({ idDoc: doc.id, ...doc.data() }));
+          if (gastosNube.length > 0) {
+            gastos = gastosNube;
+            guardarLocal();
+            actualizarDashboard();
+            if (filtroActual === 'gastos') renderizarVistaGastos();
+          }
+        }
       });
 
       db.collection("stock").onSnapshot((snapshot) => {
-        stockList = [];
-        snapshot.forEach((doc) => stockList.push({ idDoc: doc.id, ...doc.data() }));
-        guardarLocal();
-        if (filtroActual === 'stock') renderizarVistaStock();
+        if (!snapshot.empty) {
+          const stockNube = [];
+          snapshot.forEach((doc) => stockNube.push({ idDoc: doc.id, ...doc.data() }));
+          if (stockNube.length > 0) {
+            stockList = stockNube;
+            guardarLocal();
+            if (filtroActual === 'stock') renderizarVistaStock();
+          }
+        }
       });
     }
 
@@ -671,6 +704,7 @@
     }
 
     function actualizarDashboard() {
+      ordenarVentas();
       let vTot = 0, cTot = 0;
       datos.forEach(d => { vTot += Number(d.venta); cTot += Number(d.compra); });
       const gTot = calcularTotalGastos();
@@ -1092,56 +1126,54 @@
       }
     }
 
-    // Carga Masiva de los 32 datos a Memoria / LocalStorage
-    async function restablecerDatosNube() {
-      if (!confirm('¿Deseas restaurar los 32 registros iniciales del PDF?')) return;
+    // --- FUNCIONES PARA EXPORTAR REGISTROS (EXCEL Y PDF) ---
+    function exportarExcel() {
+      if (datos.length === 0) return alert('No hay ventas registradas para exportar.');
+      
+      const filas = datos.map(item => ({
+        "Fecha": item.fecha,
+        "Cliente / Concepto": item.cliente,
+        "Método de Pago": item.pago || 'Transferencia',
+        "Monto Venta ($)": Number(item.venta),
+        "Monto Compra ($)": Number(item.compra),
+        "Ganancia Directa ($)": Number(item.venta) - Number(item.compra)
+      }));
 
-      const datosPDF = [
-        { idDoc: 'loc_1', fecha: "2026-08-20", cliente: "FEDE", venta: 1209600, compra: 828900, pago: "Transferencia" },
-        { idDoc: 'loc_2', fecha: "2026-08-20", cliente: "EMILIANO", venta: 792000, compra: 518000, pago: "Efectivo" },
-        { idDoc: 'loc_3', fecha: "2026-08-20", cliente: "CARMELO", venta: 211200, compra: 147360, pago: "Transferencia" },
-        { idDoc: 'loc_4', fecha: "2026-08-20", cliente: "MICAELA", venta: 479000, compra: 269000, pago: "Mercado Pago" },
-        { idDoc: 'loc_5', fecha: "2026-08-20", cliente: "ADRIANA", venta: 175000, compra: 93000, pago: "Transferencia" },
-        { idDoc: 'loc_6', fecha: "2026-08-20", cliente: "FLOR", venta: 680000, compra: 480000, pago: "Efectivo" },
-        { idDoc: 'loc_7', fecha: "2026-08-20", cliente: "IVANA", venta: 1152500, compra: 768000, pago: "Transferencia" },
-        { idDoc: 'loc_8', fecha: "2026-08-20", cliente: "DALMA", venta: 360000, compra: 240000, pago: "Efectivo" },
-        { idDoc: 'loc_9', fecha: "2026-08-20", cliente: "THANIA", venta: 180000, compra: 120000, pago: "Transferencia" },
-        { idDoc: 'loc_10', fecha: "2026-08-20", cliente: "CARLOS", venta: 255000, compra: 168000, pago: "Transferencia" },
-        { idDoc: 'loc_11', fecha: "2026-08-20", cliente: "GIANOMY", venta: 70000, compra: 50000, pago: "Efectivo" },
-        { idDoc: 'loc_12', fecha: "2026-08-20", cliente: "PAULINA", venta: 85000, compra: 41000, pago: "Transferencia" },
-        { idDoc: 'loc_13', fecha: "2026-08-20", cliente: "ME QUEDO", venta: 585000, compra: 383800, pago: "Efectivo" },
-        { idDoc: 'loc_14', fecha: "2026-08-20", cliente: "GABRIELA", venta: 60000, compra: 33000, pago: "Mercado Pago" },
-        { idDoc: 'loc_15', fecha: "2026-08-17", cliente: "EMILIANO", venta: 3197000, compra: 2242700, pago: "Transferencia" },
-        { idDoc: 'loc_16', fecha: "2026-08-17", cliente: "FEDE", venta: 500000, compra: 346240, pago: "Transferencia" },
-        { idDoc: 'loc_17', fecha: "2026-08-17", cliente: "JOSE", venta: 360000, compra: 256020, pago: "Efectivo" },
-        { idDoc: 'loc_18', fecha: "2026-08-15", cliente: "IVANA", venta: 777500, compra: 514000, pago: "Transferencia" },
-        { idDoc: 'loc_19', fecha: "2026-08-15", cliente: "EMILIANO", venta: 860000, compra: 552000, pago: "Efectivo" },
-        { idDoc: 'loc_20', fecha: "2026-08-15", cliente: "FEDE", venta: 1400000, compra: 978000, pago: "Transferencia" },
-        { idDoc: 'loc_21', fecha: "2026-08-15", cliente: "VERONICA", venta: 475000, compra: 330000, pago: "Transferencia" },
-        { idDoc: 'loc_22', fecha: "2026-08-15", cliente: "FLOR", venta: 775000, compra: 505000, pago: "Efectivo" },
-        { idDoc: 'loc_23', fecha: "2026-08-15", cliente: "MABEL", venta: 445000, compra: 292000, pago: "Transferencia" },
-        { idDoc: 'loc_24', fecha: "2026-08-15", cliente: "AYLEN", venta: 100000, compra: 65000, pago: "Efectivo" },
-        { idDoc: 'loc_25', fecha: "2026-08-15", cliente: "FRANCHESCA", venta: 60000, compra: 32000, pago: "Mercado Pago" },
-        { idDoc: 'loc_26', fecha: "2026-08-15", cliente: "MICAELA", venta: 88000, compra: 60000, pago: "Transferencia" },
-        { idDoc: 'loc_27', fecha: "2026-08-15", cliente: "VERO", venta: 200000, compra: 130000, pago: "Efectivo" },
-        { idDoc: 'loc_28', fecha: "2026-08-15", cliente: "ME QUEDO", venta: 505000, compra: 335000, pago: "Transferencia" },
-        { idDoc: 'loc_29', fecha: "2026-08-11", cliente: "FEDE", venta: 1618500, compra: 1110390, pago: "Transferencia" },
-        { idDoc: 'loc_30', fecha: "2026-08-11", cliente: "EMILIANO", venta: 1380000, compra: 1027200, pago: "Efectivo" },
-        { idDoc: 'loc_31', fecha: "2026-08-11", cliente: "CARMELO", venta: 200000, compra: 135000, pago: "Transferencia" },
-        { idDoc: 'loc_32', fecha: "2026-08-21", cliente: "STEFI", venta: 235000, compra: 119000, pago: "Transferencia" }
-      ];
+      const hoja = XLSX.utils.json_to_sheet(filas);
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, "Ventas");
+      XLSX.writeFile(libro, `Elite_Importadora_Ventas_${fechaHoy}.xlsx`);
+    }
 
-      datos = datosPDF;
-      gastos = [{
-        idDoc: 'loc_g1',
-        fecha: "2026-08-22", 
-        concepto: "GASTOS GENERALES LOGISTICA E IMPORTACION", 
-        monto: 1247000 
-      }];
+    function exportarPDF() {
+      if (datos.length === 0) return alert('No hay ventas registradas para exportar.');
 
-      guardarLocal();
-      actualizarDashboard();
-      alert('¡Datos iniciales cargados y guardados correctamente!');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text("ELITE IMPORTADORA - Reporte de Ventas", 14, 15);
+      doc.setFontSize(10);
+      doc.text(`Fecha de emisión: ${fechaHoy}`, 14, 22);
+
+      const filas = datos.map(item => [
+        item.fecha,
+        item.cliente,
+        item.pago || 'Transferencia',
+        formatearMoneda(item.venta),
+        formatearMoneda(item.compra),
+        formatearMoneda(Number(item.venta) - Number(item.compra))
+      ]);
+
+      doc.autoTable({
+        startY: 28,
+        head: [['Fecha', 'Cliente', 'Pago', 'Venta', 'Compra', 'Ganancia']],
+        body: filas,
+        theme: 'striped',
+        headStyles: { fillColor: [30, 58, 138] }
+      });
+
+      doc.save(`Elite_Importadora_Ventas_${fechaHoy}.pdf`);
     }
 
     /* Inicialización al cargar la página */
@@ -1156,17 +1188,13 @@
     document.addEventListener('keydown', function(event) {
       const modalVenta = document.getElementById('modal-formulario');
       
-      // Comprobar si el modal de ventas está visible
       if (modalVenta && modalVenta.classList.contains('active')) {
-        
-        // Tecla ESC: Cerrar modal
         if (event.key === 'Escape') {
           cerrarModal();
         }
         
-        // Tecla ENTER: Guardar registro
         if (event.key === 'Enter') {
-          event.preventDefault(); // Evita envíos accidentales si el foco está en un botón
+          event.preventDefault();
           guardarRegistro();
         }
       }
@@ -1174,5 +1202,7 @@
   </script>
 </body>
 </html>
+
+
 
 
