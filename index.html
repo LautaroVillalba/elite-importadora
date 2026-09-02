@@ -408,6 +408,7 @@
     <label><i class="fa-regular fa-calendar-days"></i> Modo Vista:</label>
     <button class="filter-btn active" id="btn-filtro-todo" onclick="filtrarRango('todo')">Historial Completo</button>
     <button class="filter-btn" id="btn-filtro-semana" onclick="filtrarRango('semana')">Por Semanas</button>
+    <button class="filter-btn" id="btn-filtro-mes" onclick="filtrarRango('mes')">Por Mes</button>
     
     <div style="margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%;">
       <input type="text" id="input-buscador" class="search-input" placeholder="🔍 Buscar cliente, concepto..." oninput="filtrarPorBuscador()">
@@ -426,19 +427,19 @@
       <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;" id="dolar-compra-valor">Compra: -</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Ventas Totales</div>
+      <div class="kpi-title">Ventas Totales (Mes Actual)</div>
       <div class="kpi-value" id="kpi-ventas" style="color: var(--accent);">$ 0,00</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Compras / Costos</div>
+      <div class="kpi-title">Compras / Costos (Mes Actual)</div>
       <div class="kpi-value" id="kpi-compras" style="color: #f59e0b;">$ 0,00</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Gastos Totales</div>
+      <div class="kpi-title">Gastos Totales (Mes Actual)</div>
       <div class="kpi-value" id="kpi-gastos" style="color: var(--danger);">$ 0,00</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Ganancia Neta Limpia</div>
+      <div class="kpi-title">Ganancia Neta Limpia (Mes Actual)</div>
       <div class="kpi-value" id="kpi-ganancia" style="color: var(--success);">$ 0,00</div>
     </div>
   </div>
@@ -802,7 +803,7 @@
         if (!snapshot.empty) {
           const datosNube = [];
           snapshot.forEach((doc) => {
-            datosNube.push({ ...doc.data(), idDoc: doc.id }); // <--- doc.id asignado a idDoc
+            datosNube.push({ ...doc.data(), idDoc: doc.id });
           });
           datos = datosNube;
           ordenarVentas();
@@ -845,7 +846,7 @@
         if (!snapshot.empty) {
           const faltantesNube = [];
           snapshot.forEach((doc) => {
-            faltantesNube.push({ ...doc.data(), idDoc: doc.id }); // <--- doc.id asignado a idDoc
+            faltantesNube.push({ ...doc.data(), idDoc: doc.id });
           });
           faltantes = faltantesNube;
           guardarLocal();
@@ -858,15 +859,40 @@
       });
     }
 
-    function calcularTotalGastos() {
-      return gastos.reduce((sum, g) => sum + Number(g.monto), 0);
+    function calcularTotalGastosMesActual() {
+      const hoy = new Date();
+      const mesActual = hoy.getMonth();
+      const anoActual = hoy.getFullYear();
+
+      return gastos.reduce((sum, g) => {
+        if (!g.fecha) return sum;
+        const d = new Date(g.fecha + 'T00:00:00');
+        if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
+          return sum + Number(g.monto);
+        }
+        return sum;
+      }, 0);
     }
 
     function actualizarDashboard() {
       ordenarVentas();
+      
+      const hoy = new Date();
+      const mesActual = hoy.getMonth();
+      const anoActual = hoy.getFullYear();
+
+      // Cálculo de los KPIs limitados exclusivamente al MES ACTUAL
       let vTot = 0, cTot = 0;
-      datos.forEach(d => { vTot += Number(d.venta); cTot += Number(d.compra); });
-      const gTot = calcularTotalGastos();
+      datos.forEach(d => {
+        if (!d.fecha) return;
+        const fec = new Date(d.fecha + 'T00:00:00');
+        if (fec.getMonth() === mesActual && fec.getFullYear() === anoActual) {
+          vTot += Number(d.venta); 
+          cTot += Number(d.compra); 
+        }
+      });
+
+      const gTot = calcularTotalGastosMesActual();
       const gananciaLimpia = vTot - cTot - gTot;
 
       document.getElementById('kpi-ventas').innerText = formatearMoneda(vTot);
@@ -904,7 +930,28 @@
 
       tbody.innerHTML = '';
       const textoBusqueda = document.getElementById('input-buscador').value.toLowerCase();
-      let datosAMostrar = datos.filter(item => item.cliente && item.cliente.toLowerCase().includes(textoBusqueda));
+      let datosFiltrados = datos.filter(item => item.cliente && item.cliente.toLowerCase().includes(textoBusqueda));
+
+      // Filtro para mostrar solo la semana actual si "semana" está activo
+      if (filtroActual === 'semana') {
+        const hoy = new Date();
+        const diaSemana = hoy.getDay();
+        const diffLunes = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+        const inicioSemana = new Date(hoy.setDate(diffLunes));
+        inicioSemana.setHours(0, 0, 0, 0);
+
+        const finSemana = new Date(inicioSemana);
+        finSemana.setDate(inicioSemana.getDate() + 6);
+        finSemana.setHours(23, 59, 59, 999);
+
+        datosFiltrados = datosFiltrados.filter(item => {
+          if (!item.fecha) return false;
+          const d = new Date(item.fecha + 'T00:00:00');
+          return d >= inicioSemana && d <= finSemana;
+        });
+      }
+
+      let datosAMostrar = datosFiltrados;
 
       if (!mostrarTodoTabla && datosAMostrar.length > 8) {
         document.getElementById('contenedor-btn-mas').style.display = 'block';
@@ -985,33 +1032,57 @@
     function renderizarGraficoSemanas() {
       const ctx = document.getElementById('graficoEstadisticasGanancias').getContext('2d');
       const hoy = new Date();
-      const mesActual = hoy.getMonth();
-      const anoActual = hoy.getFullYear();
 
-      // Bloques de 7 días del mes
-      const bloques = {
-        'Días 1 - 7': 0,
-        'Días 8 - 14': 0,
-        'Días 15 - 21': 0,
-        'Días 22+': 0
-      };
+      let labels = [];
+      let values = [];
 
-      datos.forEach(item => {
-        if (!item.fecha) return;
-        const d = new Date(item.fecha + 'T00:00:00');
-        if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
-          const dia = d.getDate();
-          const ganancia = Number(item.venta) - Number(item.compra);
+      if (filtroActual === 'semana') {
+        const diaSemana = hoy.getDay();
+        const diffLunes = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+        const inicioSemana = new Date(hoy.setDate(diffLunes));
+        
+        const diasNombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        const diasValores = [0, 0, 0, 0, 0, 0, 0];
 
-          if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] += ganancia;
-          else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] += ganancia;
-          else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] += ganancia;
-          else bloques['Días 22+'] += ganancia;
-        }
-      });
+        datos.forEach(item => {
+          if (!item.fecha) return;
+          const d = new Date(item.fecha + 'T00:00:00');
+          const diffDias = Math.floor((d - inicioSemana) / (1000 * 60 * 60 * 24));
+          if (diffDias >= 0 && diffDias < 7) {
+            diasValores[diffDias] += (Number(item.venta) - Number(item.compra));
+          }
+        });
 
-      const labels = Object.keys(bloques);
-      const values = Object.values(bloques);
+        labels = diasNombres;
+        values = diasValores;
+      } else {
+        const mesActual = hoy.getMonth();
+        const anoActual = hoy.getFullYear();
+
+        const bloques = {
+          'Días 1 - 7': 0,
+          'Días 8 - 14': 0,
+          'Días 15 - 21': 0,
+          'Días 22+': 0
+        };
+
+        datos.forEach(item => {
+          if (!item.fecha) return;
+          const d = new Date(item.fecha + 'T00:00:00');
+          if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
+            const dia = d.getDate();
+            const ganancia = Number(item.venta) - Number(item.compra);
+
+            if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] += ganancia;
+            else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] += ganancia;
+            else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] += ganancia;
+            else bloques['Días 22+'] += ganancia;
+          }
+        });
+
+        labels = Object.keys(bloques);
+        values = Object.values(bloques);
+      }
 
       if (miGraficoEstadisticas) miGraficoEstadisticas.destroy();
 
@@ -1020,7 +1091,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Ganancia Limpia por Bloque ($)',
+            label: filtroActual === 'semana' ? 'Ganancia Limpia por Día de Semana ($)' : 'Ganancia Limpia por Bloque ($)',
             data: values,
             backgroundColor: '#3b82f6',
             borderRadius: 6
@@ -1068,7 +1139,6 @@
       if (!faltante) return;
 
       if (confirm(`¿Confirmar que el cliente ${faltante.cliente} pagó la deuda de ${formatearMoneda(faltante.monto)}?`)) {
-        // Mover a Ventas Totales
         const nuevaVenta = {
           idDoc: 'loc_' + Date.now(),
           fecha: fechaHoy,
@@ -1084,7 +1154,6 @@
           try { await db.collection("ventas").add(nuevaVenta); } catch(e){}
         }
 
-        // Eliminar de Pagos Faltantes
         await eliminarFaltante(idDoc, false);
 
         guardarLocal();
@@ -1132,7 +1201,6 @@
       if (!idDoc) return;
 
       if (!pedirConfirmacion || confirm('¿Eliminar esta deuda pendiente?')) {
-        // Eliminación en Firebase
         if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
           try { 
             await db.collection("faltantes").doc(idDoc).delete(); 
@@ -1141,7 +1209,6 @@
           }
         }
 
-        // Eliminación local e interfaz
         faltantes = faltantes.filter(f => f.idDoc !== idDoc);
         guardarLocal();
         if (filtroActual === 'faltantes') renderizarVistaFaltantes();
@@ -1269,6 +1336,9 @@
       } else if (rango === 'faltantes') {
         document.getElementById('vista-faltantes').style.display = 'block';
         renderizarVistaFaltantes();
+      } else if (rango === 'mes') {
+        document.getElementById('seccion-mes-a-mes').style.display = 'block';
+        renderizarCuadroMesAMes();
       } else {
         document.getElementById('vista-dashboard').style.display = 'grid';
         document.getElementById('seccion-mes-a-mes').style.display = 'block';
@@ -1330,7 +1400,6 @@
       if (!cliente || venta <= 0) return alert('Ingresa un cliente y un monto válido.');
 
       if (editId) {
-        // Modo Edición
         const index = datos.findIndex(d => d.idDoc === editId);
         if (index !== -1) {
           datos[index].fecha = fecha;
@@ -1346,7 +1415,6 @@
           } catch(e){}
         }
       } else {
-        // Modo Nuevo Registro
         const nuevoRegistro = { idDoc: 'loc_' + Date.now(), fecha, cliente, venta, compra, pago, creado: new Date() };
         datos.unshift(nuevoRegistro);
 
@@ -1431,7 +1499,6 @@
       if (!idDoc) return;
 
       if (confirm('¿Eliminar esta venta permanentemente?')) {
-        // Si existe conexión a Firebase y no es un ID puramente local
         if (db && firebaseConfig.projectId !== "tu-proyecto-id" && !idDoc.startsWith('loc_')) {
           try { 
             await db.collection("ventas").doc(idDoc).delete(); 
@@ -1440,7 +1507,6 @@
           }
         }
 
-        // Eliminación local e interfaz
         datos = datos.filter(d => d.idDoc !== idDoc);
         guardarLocal();
         actualizarDashboard();
