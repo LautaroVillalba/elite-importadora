@@ -64,8 +64,8 @@
       margin-bottom: 24px;
       flex-wrap: wrap;
       gap: 16px;
-      background: var(--card-bg);
-      padding: 16px 24px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      padding: 18px 24px;
       border-radius: 12px;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow);
@@ -409,6 +409,11 @@
     <button class="filter-btn active" id="btn-filtro-todo" onclick="filtrarRango('todo')">Historial Completo</button>
     <button class="filter-btn" id="btn-filtro-semana" onclick="filtrarRango('semana')">Por Semanas</button>
     <button class="filter-btn" id="btn-filtro-mes" onclick="filtrarRango('mes')">Por Mes</button>
+    <div id="contenedor-selector-mes" style="display: inline-flex; align-items: center; gap: 6px; margin-left: 4px;">
+      <label for="select-mes-filtro" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Mes:</label>
+      <select id="select-mes-filtro" class="form-control" style="width: auto; padding: 4px 8px; font-size: 12px;" onchange="cambiarMesSeleccionado(this.value)">
+      </select>
+    </div>
     
     <div style="margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; width: 100%;">
       <input type="text" id="input-buscador" class="search-input" placeholder="🔍 Buscar cliente, concepto..." oninput="filtrarPorBuscador()">
@@ -427,20 +432,20 @@
       <div style="font-size: 11px; margin-top: 4px; opacity: 0.9;" id="dolar-compra-valor">Compra: -</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Ventas Totales (Mes Actual)</div>
-      <div class="kpi-value" id="kpi-ventas" style="color: var(--accent);">$ 0,00</div>
+      <div class="kpi-title" id="titulo-kpi-ventas">Ventas Totales</div>
+      <div class="kpi-value" id="kpi-ventas" style="color: var(--accent);">$ 0</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Compras / Costos (Mes Actual)</div>
-      <div class="kpi-value" id="kpi-compras" style="color: #f59e0b;">$ 0,00</div>
+      <div class="kpi-title" id="titulo-kpi-compras">Compras / Costos</div>
+      <div class="kpi-value" id="kpi-compras" style="color: #f59e0b;">$ 0</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Gastos Totales (Mes Actual)</div>
-      <div class="kpi-value" id="kpi-gastos" style="color: var(--danger);">$ 0,00</div>
+      <div class="kpi-title" id="titulo-kpi-gastos">Gastos Totales</div>
+      <div class="kpi-value" id="kpi-gastos" style="color: var(--danger);">$ 0</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Ganancia Neta Limpia (Mes Actual)</div>
-      <div class="kpi-value" id="kpi-ganancia" style="color: var(--success);">$ 0,00</div>
+      <div class="kpi-title" id="titulo-kpi-ganancia">Ganancia Neta Limpia</div>
+      <div class="kpi-value" id="kpi-ganancia" style="color: var(--success);">$ 0</div>
     </div>
   </div>
 
@@ -448,13 +453,13 @@
   <div class="goal-box">
     <div class="goal-header">
       <span><i class="fa-solid fa-bullseye" style="color: var(--accent);"></i> Meta de Ganancia Limpia Mensual</span>
-      <span id="texto-meta">$ 0,00 / $ 6.000.000,00 (0%)</span>
+      <span id="texto-meta">$ 0 / $ 6.000.000 (0%)</span>
     </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" id="barra-meta-progreso" style="width: 0%;"></div>
     </div>
     <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: right;" id="texto-falta-meta">
-      Falta: $ 6.000.000,00 para la meta
+      Falta: $ 6.000.000 para la meta
     </div>
   </div>
 
@@ -462,7 +467,7 @@
   <div class="main-grid" id="vista-dashboard">
     <div class="card-box">
       <div class="box-title">
-        <span><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Desglose por Semanas (Mes Actual)</span>
+        <span><i class="fa-solid fa-chart-line" style="color: var(--success);"></i> Desglose por Semanas de 7 Días (Ganancia Limpia)</span>
       </div>
       <div class="chart-container">
         <canvas id="graficoEstadisticasGanancias"></canvas>
@@ -634,11 +639,11 @@
       </div>
       <div class="form-group">
         <label for="input-venta">Monto Total de Venta ($)</label>
-        <input type="number" id="input-venta" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-venta" class="form-control" placeholder="0">
       </div>
       <div class="form-group">
         <label for="input-compra">Costo de Compra / Importación ($)</label>
-        <input type="number" id="input-compra" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-compra" class="form-control" placeholder="0">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar (Esc)</button>
@@ -661,7 +666,7 @@
       </div>
       <div class="form-group">
         <label for="input-gasto-monto">Monto de Dinero ($)</label>
-        <input type="number" id="input-gasto-monto" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-gasto-monto" class="form-control" placeholder="0">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="cerrarModalGasto()">Cancelar (Esc)</button>
@@ -684,11 +689,11 @@
       </div>
       <div class="form-group">
         <label for="input-faltante-compra">Gasto de Compras / Costos ($)</label>
-        <input type="number" id="input-faltante-compra" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-faltante-compra" class="form-control" placeholder="0">
       </div>
       <div class="form-group">
         <label for="input-faltante-monto">Monto Pendiente a Pagar ($)</label>
-        <input type="number" id="input-faltante-monto" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-faltante-monto" class="form-control" placeholder="0">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="cerrarModalPagoFaltante()">Cancelar (Esc)</button>
@@ -707,15 +712,15 @@
       </div>
       <div class="form-group">
         <label for="input-stock-cantidad">Cantidad Inicial</label>
-        <input type="number" id="input-stock-cantidad" class="form-control" placeholder="10">
+        <input type="number" inputmode="numeric" id="input-stock-cantidad" class="form-control" placeholder="10">
       </div>
       <div class="form-group">
         <label for="input-stock-costo">Costo Unitario ($)</label>
-        <input type="number" id="input-stock-costo" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-stock-costo" class="form-control" placeholder="0">
       </div>
       <div class="form-group">
         <label for="input-stock-precio">Precio de Venta ($)</label>
-        <input type="number" id="input-stock-precio" class="form-control" placeholder="0.00">
+        <input type="number" inputmode="decimal" id="input-stock-precio" class="form-control" placeholder="0">
       </div>
       <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
         <button class="btn btn-secondary" onclick="cerrarModalStock()">Cancelar (Esc)</button>
@@ -762,6 +767,7 @@
     let filtroActual = 'todo';
     let miGraficoEstadisticas = null;
     let mostrarTodoTabla = false;
+    let mesSeleccionadoFiltro = new Date().toISOString().slice(0, 7); // Formato YYYY-MM
 
     function guardarLocal() {
       localStorage.setItem('elite_ventas', JSON.stringify(datos));
@@ -779,8 +785,16 @@
       });
     }
 
+    function ordenarGastos() {
+      gastos.sort((a, b) => {
+        const fechaA = new Date(a.fecha);
+        const fechaB = new Date(b.fecha);
+        return fechaB - fechaA;
+      });
+    }
+
     function formatearMoneda(val) {
-      return "$ " + Number(val).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return "$ " + Math.round(Number(val) || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
     async function obtenerCotizacionDolar() {
@@ -788,12 +802,42 @@
         const respuesta = await fetch('https://dolarapi.com/v1/dolares/blue');
         if (respuesta.ok) {
           const data = await respuesta.json();
-          document.getElementById('dolar-venta-valor').innerText = `Venta: $ ${data.venta}`;
-          document.getElementById('dolar-compra-valor').innerText = `Compra: $ ${data.compra}`;
+          document.getElementById('dolar-venta-valor').innerText = `Venta: $ ${Math.round(data.venta)}`;
+          document.getElementById('dolar-compra-valor').innerText = `Compra: $ ${Math.round(data.compra)}`;
         }
       } catch (err) {
         document.getElementById('dolar-venta-valor').innerText = 'Sin conexión';
       }
+    }
+
+    function poblarSelectorMeses() {
+      const select = document.getElementById('select-mes-filtro');
+      if (!select) return;
+
+      const mesesUnicos = new Set();
+      const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+      mesesUnicos.add(new Date().toISOString().slice(0, 7));
+
+      datos.forEach(d => { if (d.fecha) mesesUnicos.add(d.fecha.slice(0, 7)); });
+      gastos.forEach(g => { if (g.fecha) mesesUnicos.add(g.fecha.slice(0, 7)); });
+
+      const listaOrdenada = Array.from(mesesUnicos).sort().reverse();
+      
+      select.innerHTML = '';
+      listaOrdenada.forEach(m => {
+        const [yy, mm] = m.split('-');
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.innerText = `${nombresMeses[parseInt(mm, 10) - 1]} ${yy}`;
+        if (m === mesSeleccionadoFiltro) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function cambiarMesSeleccionado(nuevoMes) {
+      mesSeleccionadoFiltro = nuevoMes;
+      actualizarDashboard();
     }
 
     // --- ESCUCHADORES EN TIEMPO REAL (FIREBASE) ---
@@ -808,6 +852,7 @@
           datos = datosNube;
           ordenarVentas();
           guardarLocal();
+          poblarSelectorMeses();
           actualizarDashboard();
         } else {
           datos = [];
@@ -822,7 +867,9 @@
           snapshot.forEach((doc) => gastosNube.push({ idDoc: doc.id, ...doc.data() }));
           if (gastosNube.length > 0) {
             gastos = gastosNube;
+            ordenarGastos();
             guardarLocal();
+            poblarSelectorMeses();
             actualizarDashboard();
             if (filtroActual === 'gastos') renderizarVistaGastos();
           }
@@ -859,15 +906,10 @@
       });
     }
 
-    function calcularTotalGastosMesActual() {
-      const hoy = new Date();
-      const mesActual = hoy.getMonth();
-      const anoActual = hoy.getFullYear();
-
+    function calcularTotalGastosMes(mesClave) {
       return gastos.reduce((sum, g) => {
         if (!g.fecha) return sum;
-        const d = new Date(g.fecha + 'T00:00:00');
-        if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
+        if (!mesClave || g.fecha.startsWith(mesClave)) {
           return sum + Number(g.monto);
         }
         return sum;
@@ -876,24 +918,27 @@
 
     function actualizarDashboard() {
       ordenarVentas();
-      
-      const hoy = new Date();
-      const mesActual = hoy.getMonth();
-      const anoActual = hoy.getFullYear();
+      ordenarGastos();
 
-      // Cálculo de los KPIs limitados exclusivamente al MES ACTUAL
+      const usarMes = (filtroActual === 'mes' || filtroActual === 'semana') ? mesSeleccionadoFiltro : null;
+
       let vTot = 0, cTot = 0;
       datos.forEach(d => {
         if (!d.fecha) return;
-        const fec = new Date(d.fecha + 'T00:00:00');
-        if (fec.getMonth() === mesActual && fec.getFullYear() === anoActual) {
+        if (!usarMes || d.fecha.startsWith(usarMes)) {
           vTot += Number(d.venta); 
           cTot += Number(d.compra); 
         }
       });
 
-      const gTot = calcularTotalGastosMesActual();
+      const gTot = calcularTotalGastosMes(usarMes);
       const gananciaLimpia = vTot - cTot - gTot;
+
+      const sufijoTitulo = usarMes ? ` (${usarMes})` : '';
+      document.getElementById('titulo-kpi-ventas').innerText = `Ventas Totales${sufijoTitulo}`;
+      document.getElementById('titulo-kpi-compras').innerText = `Compras / Costos${sufijoTitulo}`;
+      document.getElementById('titulo-kpi-gastos').innerText = `Gastos Totales${sufijoTitulo}`;
+      document.getElementById('titulo-kpi-ganancia').innerText = `Ganancia Neta Limpia${sufijoTitulo}`;
 
       document.getElementById('kpi-ventas').innerText = formatearMoneda(vTot);
       document.getElementById('kpi-compras').innerText = formatearMoneda(cTot);
@@ -932,8 +977,9 @@
       const textoBusqueda = document.getElementById('input-buscador').value.toLowerCase();
       let datosFiltrados = datos.filter(item => item.cliente && item.cliente.toLowerCase().includes(textoBusqueda));
 
-      // Filtro para mostrar solo la semana actual si "semana" está activo
-      if (filtroActual === 'semana') {
+      if (filtroActual === 'mes') {
+        datosFiltrados = datosFiltrados.filter(item => item.fecha && item.fecha.startsWith(mesSeleccionadoFiltro));
+      } else if (filtroActual === 'semana') {
         const hoy = new Date();
         const diaSemana = hoy.getDay();
         const diffLunes = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
@@ -1028,61 +1074,45 @@
       });
     }
 
-    // --- GRÁFICO DE VENTAS POR SEMANAS DE 7 DÍAS ---
+    // --- GRÁFICO DE GANANCIAS EN BLOQUES DE 7 EN 7 DÍAS DESCONTANDO GASTOS ---
     function renderizarGraficoSemanas() {
       const ctx = document.getElementById('graficoEstadisticasGanancias').getContext('2d');
-      const hoy = new Date();
+      const mesClave = mesSeleccionadoFiltro;
 
-      let labels = [];
-      let values = [];
+      const bloques = {
+        'Días 1 - 7': 0,
+        'Días 8 - 14': 0,
+        'Días 15 - 21': 0,
+        'Días 22 - 28': 0,
+        'Días 29+': 0
+      };
 
-      if (filtroActual === 'semana') {
-        const diaSemana = hoy.getDay();
-        const diffLunes = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
-        const inicioSemana = new Date(hoy.setDate(diffLunes));
-        
-        const diasNombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        const diasValores = [0, 0, 0, 0, 0, 0, 0];
+      datos.forEach(item => {
+        if (!item.fecha || !item.fecha.startsWith(mesClave)) return;
+        const dia = parseInt(item.fecha.slice(8, 10), 10);
+        const gananciaBruta = Number(item.venta) - Number(item.compra);
 
-        datos.forEach(item => {
-          if (!item.fecha) return;
-          const d = new Date(item.fecha + 'T00:00:00');
-          const diffDias = Math.floor((d - inicioSemana) / (1000 * 60 * 60 * 24));
-          if (diffDias >= 0 && diffDias < 7) {
-            diasValores[diffDias] += (Number(item.venta) - Number(item.compra));
-          }
-        });
+        if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] += gananciaBruta;
+        else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] += gananciaBruta;
+        else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] += gananciaBruta;
+        else if (dia >= 22 && dia <= 28) bloques['Días 22 - 28'] += gananciaBruta;
+        else if (dia >= 29) bloques['Días 29+'] += gananciaBruta;
+      });
 
-        labels = diasNombres;
-        values = diasValores;
-      } else {
-        const mesActual = hoy.getMonth();
-        const anoActual = hoy.getFullYear();
+      gastos.forEach(g => {
+        if (!g.fecha || !g.fecha.startsWith(mesClave)) return;
+        const dia = parseInt(g.fecha.slice(8, 10), 10);
+        const montoGasto = Number(g.monto);
 
-        const bloques = {
-          'Días 1 - 7': 0,
-          'Días 8 - 14': 0,
-          'Días 15 - 21': 0,
-          'Días 22+': 0
-        };
+        if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] -= montoGasto;
+        else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] -= montoGasto;
+        else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] -= montoGasto;
+        else if (dia >= 22 && dia <= 28) bloques['Días 22 - 28'] -= montoGasto;
+        else if (dia >= 29) bloques['Días 29+'] -= montoGasto;
+      });
 
-        datos.forEach(item => {
-          if (!item.fecha) return;
-          const d = new Date(item.fecha + 'T00:00:00');
-          if (d.getMonth() === mesActual && d.getFullYear() === anoActual) {
-            const dia = d.getDate();
-            const ganancia = Number(item.venta) - Number(item.compra);
-
-            if (dia >= 1 && dia <= 7) bloques['Días 1 - 7'] += ganancia;
-            else if (dia >= 8 && dia <= 14) bloques['Días 8 - 14'] += ganancia;
-            else if (dia >= 15 && dia <= 21) bloques['Días 15 - 21'] += ganancia;
-            else bloques['Días 22+'] += ganancia;
-          }
-        });
-
-        labels = Object.keys(bloques);
-        values = Object.values(bloques);
-      }
+      const labels = Object.keys(bloques);
+      const values = Object.values(bloques);
 
       if (miGraficoEstadisticas) miGraficoEstadisticas.destroy();
 
@@ -1091,9 +1121,9 @@
         data: {
           labels: labels,
           datasets: [{
-            label: filtroActual === 'semana' ? 'Ganancia Limpia por Día de Semana ($)' : 'Ganancia Limpia por Bloque ($)',
+            label: `Ganancia Limpia de 7 en 7 Días (${mesClave}) ($)`,
             data: values,
-            backgroundColor: '#3b82f6',
+            backgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'),
             borderRadius: 6
           }]
         },
@@ -1294,6 +1324,7 @@
     }
 
     function renderizarVistaGastos() {
+      ordenarGastos();
       const tbody = document.getElementById('tabla-cuerpo-gastos');
       tbody.innerHTML = '';
 
@@ -1337,8 +1368,9 @@
         document.getElementById('vista-faltantes').style.display = 'block';
         renderizarVistaFaltantes();
       } else if (rango === 'mes') {
+        document.getElementById('vista-dashboard').style.display = 'grid';
         document.getElementById('seccion-mes-a-mes').style.display = 'block';
-        renderizarCuadroMesAMes();
+        actualizarDashboard();
       } else {
         document.getElementById('vista-dashboard').style.display = 'grid';
         document.getElementById('seccion-mes-a-mes').style.display = 'block';
@@ -1424,6 +1456,7 @@
       }
 
       guardarLocal();
+      poblarSelectorMeses();
       actualizarDashboard();
       cerrarModal();
     }
@@ -1448,7 +1481,9 @@
 
       const nuevoGasto = { idDoc: 'loc_' + Date.now(), fecha, concepto, monto, creado: new Date() };
       gastos.unshift(nuevoGasto);
+      ordenarGastos();
       guardarLocal();
+      poblarSelectorMeses();
       actualizarDashboard();
       if (filtroActual === 'gastos') renderizarVistaGastos();
 
@@ -1580,6 +1615,7 @@
 
           datos = datos.concat(nuevasVentas);
           guardarLocal();
+          poblarSelectorMeses();
           actualizarDashboard();
 
           if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
@@ -1660,6 +1696,7 @@
 
           datos.unshift(nuevoRegistro);
           guardarLocal();
+          poblarSelectorMeses();
           actualizarDashboard();
 
           if (db && firebaseConfig.projectId !== "tu-proyecto-id") {
@@ -1691,9 +1728,9 @@
         "Fecha": item.fecha,
         "Cliente / Concepto": item.cliente,
         "Método de Pago": item.pago || 'Transferencia',
-        "Monto Venta ($)": Number(item.venta),
-        "Monto Compra ($)": Number(item.compra),
-        "Ganancia Directa ($)": Number(item.venta) - Number(item.compra)
+        "Monto Venta ($)": Math.round(Number(item.venta)),
+        "Monto Compra ($)": Math.round(Number(item.compra)),
+        "Ganancia Directa ($)": Math.round(Number(item.venta) - Number(item.compra))
       }));
 
       const hoja = XLSX.utils.json_to_sheet(filas);
@@ -1735,6 +1772,7 @@
 
     /* Inicialización al cargar la página */
     window.onload = function() {
+      poblarSelectorMeses();
       actualizarDashboard();
       if (typeof obtenerCotizacionDolar === 'function') {
         obtenerCotizacionDolar();
@@ -1774,7 +1812,6 @@
   </script>
 </body>
 </html>
-
 
 
 
